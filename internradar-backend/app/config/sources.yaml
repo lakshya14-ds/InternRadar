@@ -1,0 +1,210 @@
+# Manual internship sources scraped via CSS selector.
+# All sources here are India-focused.
+# Fields:
+#   name             : display name stored in the DB
+#   type             : tag applied to each internship
+#   url              : page to scrape
+#   selector         : CSS selector for job link elements
+#   location         : default location tag when none is parsed from the link text
+#   refresh_interval : minutes between re-checks
+
+sources:
+
+  # ── Dedicated Indian internship platforms ──────────────────────────────────
+
+  - name: Internshala
+    type: internshala
+    url: https://internshala.com/internships/
+    selector: "a.job-title-href"
+    location: India
+    refresh_interval: 30
+
+  - name: Internshala Engineering
+    type: internshala
+    url: https://internshala.com/internships/engineering-internship/
+    selector: "a.job-title-href"
+    location: India
+    refresh_interval: 30
+
+  - name: Internshala Computer Science
+    type: internshala
+    url: https://internshala.com/internships/computer-science-internship/
+    selector: "a.job-title-href"
+    location: India
+    refresh_interval: 30
+
+  - name: Internshala Data Science
+    type: internshala
+    url: https://internshala.com/internships/data-science-internship/
+    selector: "a.job-title-href"
+    location: India
+    refresh_interval: 30
+
+  - name: LetsIntern
+    type: letsintern
+    url: https://www.letsintern.com/internships/
+    selector: "a.internship-title"
+    location: India
+    refresh_interval: 60
+
+  - name: HelloIntern
+    type: hellointern
+    url: https://hellointern.in/internships
+    selector: "a.job-title"
+    location: India
+    refresh_interval: 60
+
+  # ── IIT Placement & Internship Portals ─────────────────────────────────────
+
+  - name: IIT Bombay
+    type: iit_portal
+    url: https://www.iitb.ac.in/
+    selector: a
+    location: Mumbai, India
+    refresh_interval: 60
+
+  - name: IIT Delhi
+    type: iit_portal
+    url: https://home.iitd.ac.in/
+    selector: a
+    location: New Delhi, India
+    refresh_interval: 60
+
+  - name: IIT Madras
+    type: iit_portal
+    url: https://www.iitm.ac.in/
+    selector: a
+    location: Chennai, India
+    refresh_interval: 60
+
+  - name: IIT Kanpur
+    type: iit_portal
+    url: https://www.iitk.ac.in/
+    selector: a
+    location: Kanpur, India
+    refresh_interval: 60
+
+  - name: IIT Kharagpur
+    type: iit_portal
+    url: https://www.iitkgp.ac.in/
+    selector: a
+    location: Kharagpur, India
+    refresh_interval: 60
+
+  - name: IIT Hyderabad
+    type: iit_portal
+    url: https://iith.ac.in/
+    selector: a
+    location: Hyderabad, India
+    refresh_interval: 60
+
+  - name: IIT Roorkee
+    type: iit_portal
+    url: https://www.iitr.ac.in/
+    selector: a
+    location: Roorkee, India
+    refresh_interval: 60
+
+  - name: IIT Gandhinagar
+    type: iit_portal
+    url: https://www.iitgn.ac.in/
+    selector: a
+    location: Ahmedabad, India
+    refresh_interval: 60
+
+  # ── NIT & Central University Portals ───────────────────────────────────────
+
+  - name: NIT Trichy
+    type: nit_portal
+    url: https://www.nitt.edu/
+    selector: a
+    location: Tiruchirappalli, India
+    refresh_interval: 120
+
+  - name: NIT Warangal
+    type: nit_portal
+    url: https://www.nitw.ac.in/
+    selector: a
+    location: Warangal, India
+    refresh_interval: 120
+
+  - name: BITS Pilani
+    type: bits_portal
+    url: https://www.bits-pilani.ac.in/
+    selector: a
+    location: Pilani, India
+    refresh_interval: 120
+
+  # ── Government & PSU Internship Portals ────────────────────────────────────
+
+  - name: ISRO Internship
+    type: government_portal
+    url: https://www.isro.gov.in/Internship.html
+    selector: a
+    location: India
+    refresh_interval: 120
+
+  - name: DRDO Internship
+    type: government_portal
+    url: https://www.drdo.gov.in/internship-opportunities
+    selector: a
+    location: India
+    refresh_interval: 120
+
+  - name: National Informatics Centre (NIC)
+    type: government_portal
+    url: https://www.nic.in/careers/
+    selector: a
+    location: New Delhi, India
+    refresh_interval: 120
+
+  - name: CSIR Internship
+    type: government_portal
+    url: https://www.csir.res.in/opportunities/internship
+    selector: a
+    location: India
+    refresh_interval: 120
+
+  - name: DST India
+    type: government_portal
+    url: https://dst.gov.in/
+    selector: a
+    location: New Delhi, India
+    refresh_interval: 120
+
+  # ── Research Labs ───────────────────────────────────────────────────────────
+
+  - name: Microsoft Research India
+    type: research_lab
+    url: https://www.microsoft.com/en-us/research/lab/microsoft-research-india/opportunities/
+    selector: a
+    location: Bangalore, India
+    refresh_interval: 120
+
+  - name: Google Research India
+    type: research_lab
+    url: https://research.google/careers/
+    selector: a
+    location: Bangalore, India
+    refresh_interval: 120
+
+  - name: IBM Research India
+    type: research_lab
+    url: https://research.ibm.com/labs/india/
+    selector: a
+    location: Bangalore, India
+    refresh_interval: 120
+
+  - name: Adobe Research India
+    type: research_lab
+    url: https://research.adobe.com/careers/bangalore/
+    selector: a
+    location: Noida, India
+    refresh_interval: 120
+
+  - name: Qualcomm India R&D
+    type: research_lab
+    url: https://www.qualcomm.com/company/careers/internships
+    selector: a
+    location: Hyderabad, India
+    refresh_interval: 120

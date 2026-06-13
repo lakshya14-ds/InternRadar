@@ -1,0 +1,1 @@
+"""ATS connector adapters."""
