@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
   RefreshCw, CheckCircle2, AlertCircle, Loader2,
-  Zap, ChevronDown, ChevronUp, Clock,
+  Zap, ChevronDown, ChevronUp, Clock, Server, Play, Check, Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow, parseISO } from "date-fns";
@@ -40,55 +40,94 @@ async function triggerScrape(): Promise<void> {
   await axios.post("/backend/api/scraper/trigger");
 }
 
-function ConnectorRow({ name, result, isCurrent }: {
+function ConnectorCard({ name, result, isCurrent }: {
   name: string;
   result?: ConnectorResult;
   isCurrent: boolean;
 }) {
+  const getBadgeStyle = () => {
+    if (isCurrent) return "bg-orange-500/10 border-orange-500/30 text-orange-300";
+    if (result?.status === "done") return "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
+    if (result?.status === "error") return "bg-red-500/10 border-red-500/20 text-red-400";
+    return "bg-white/5 border-white/5 text-muted-foreground";
+  };
+
+  const getBadgeText = () => {
+    if (isCurrent) return "Scanning";
+    if (result?.status === "done") return "Idle";
+    if (result?.status === "error") return "Failed";
+    return "Ready";
+  };
+
   return (
-    <div className={cn(
-      "flex items-center justify-between py-2 px-3 rounded-lg text-sm transition-all",
-      isCurrent && "bg-indigo-500/10 border border-indigo-500/20",
-      result?.status === "done" && "opacity-70",
-      result?.status === "error" && "bg-red-500/5",
-    )}>
-      <div className="flex items-center gap-2">
-        {isCurrent ? (
-          <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin shrink-0" />
-        ) : result?.status === "done" ? (
-          <CheckCircle2 className="w-3.5 h-3.5 text-green-400 shrink-0" />
-        ) : result?.status === "error" ? (
-          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-        ) : (
-          <div className="w-3.5 h-3.5 rounded-full border border-white/20 shrink-0" />
-        )}
-        <span className={cn(
-          isCurrent ? "text-indigo-300 font-medium" : "text-muted-foreground",
-          result ? "text-foreground" : "",
-        )}>
-          {name}
+    <motion.div
+      layout
+      className={cn(
+        "relative rounded-xl border p-4 bg-[#18181b]/40 glass transition-all duration-300 flex flex-col justify-between min-h-[145px] overflow-hidden",
+        isCurrent ? "border-orange-500/40 ring-1 ring-orange-500/10 shadow-lg shadow-orange-500/5" : "border-white/5 hover:border-white/10"
+      )}
+    >
+      {/* Pulse effect for active scans */}
+      {isCurrent && (
+        <div className="absolute top-0 right-0 w-2 h-2 mt-3 mr-3 rounded-full bg-orange-500 animate-ping" />
+      )}
+
+      {/* Top Row: Logo & Status Badge */}
+      <div className="flex items-center justify-between w-full">
+        <div className="w-7 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-[10px] font-extrabold text-orange-400 shrink-0">
+          {name.substring(0, 2).toUpperCase()}
+        </div>
+        <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0", getBadgeStyle())}>
+          {getBadgeText()}
         </span>
       </div>
-      {result && result.status === "done" && (
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span>{result.fetched} fetched</span>
-          {result.inserted > 0 && (
-            <span className="text-green-400 font-medium">+{result.inserted} new</span>
-          )}
-        </div>
-      )}
-      {result?.status === "error" && (
-        <span className="text-xs text-red-400">Failed</span>
-      )}
-      {isCurrent && (
-        <span className="text-xs text-indigo-400 animate-pulse">Running…</span>
-      )}
-    </div>
+
+      {/* Middle Row: Title and Subtitle */}
+      <div className="mt-3 flex-1 flex flex-col justify-center">
+        <span className="text-xs font-bold text-white block truncate w-full" title={name}>
+          {name}
+        </span>
+        <span className="text-[9px] text-muted-foreground font-semibold block mt-0.5 uppercase tracking-wider">
+          Connector
+        </span>
+      </div>
+
+      {/* Bottom Row: Metrics & Finish Status */}
+      <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between w-full">
+        {result && result.status === "done" ? (
+          <div className="space-y-0.5">
+            <span className="text-[9px] font-semibold text-muted-foreground/80 block uppercase tracking-wider">Results</span>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-white">
+              <span>{result.fetched} Scanned</span>
+              {result.inserted > 0 && (
+                <span className="text-emerald-400 font-semibold">+{result.inserted}</span>
+              )}
+            </div>
+          </div>
+        ) : isCurrent ? (
+          <div className="space-y-0.5">
+            <span className="text-[9px] font-semibold text-orange-400/80 block uppercase tracking-wider animate-pulse">Running</span>
+            <span className="text-[10px] font-bold text-white flex items-center gap-1">
+              <Loader2 className="w-2.5 h-2.5 animate-spin text-orange-400 shrink-0" /> API Query
+            </span>
+          </div>
+        ) : (
+          <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">No Activity</span>
+        )}
+
+        {result?.status === "done" && (
+          <div className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <Check className="w-2.5 h-2.5" />
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
 export function ScraperPanel() {
   const queryClient = useQueryClient();
+  const statusReadFailures = useRef(0);
   const [status, setStatus] = useState<ScraperStatus | null>(null);
   const [triggering, setTriggering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,31 +135,45 @@ export function ScraperPanel() {
   const [justFinished, setJustFinished] = useState(false);
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const poll = async () => {
       try {
         const s = await fetchStatus();
+        if (cancelled) return;
+        statusReadFailures.current = 0;
+        setError(null);
         setStatus((prev) => {
-          if (prev?.is_running && !s.is_running) setJustFinished(true);
+          if (prev?.is_running && !s.is_running) {
+            setJustFinished(true);
+            queryClient.invalidateQueries({ queryKey: ["stats"] });
+            queryClient.invalidateQueries({ queryKey: ["internships"] });
+          }
           return s;
         });
-        if (!s.is_running) {
-          if (interval) clearInterval(interval);
-          interval = null;
-          queryClient.invalidateQueries({ queryKey: ["stats"] });
-          queryClient.invalidateQueries({ queryKey: ["internships"] });
+        if (s.is_running && !cancelled) {
+          timeoutId = setTimeout(poll, 2500);
         }
-      } catch {
-        // ignore
+      } catch (err: unknown) {
+        if (!cancelled) {
+          statusReadFailures.current += 1;
+          const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+          if (statusReadFailures.current >= 3) {
+            setError(msg || "Unable to read scraper status");
+          }
+          timeoutId = setTimeout(poll, 2500);
+        }
       }
     };
 
     poll();
-    interval = setInterval(poll, 2000);
 
-    return () => { if (interval) clearInterval(interval); };
-  }, [queryClient]);
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [queryClient, status?.is_running]);
 
   useEffect(() => {
     if (status?.is_running) {
@@ -143,7 +196,10 @@ export function ScraperPanel() {
     setExpanded(true);
     try {
       await triggerScrape();
-      // Poll kicks in from useEffect interval
+      const s = await fetchStatus();
+      statusReadFailures.current = 0;
+      setError(null);
+      setStatus(s);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setError(msg || "Failed to trigger scraper");
@@ -154,52 +210,58 @@ export function ScraperPanel() {
 
   const isRunning = status?.is_running ?? false;
   const progressMap = new Map(status?.progress?.map((p) => [p.connector, p]) ?? []);
-
   const completedConnectors = new Set(status?.progress?.map((p) => p.connector) ?? []);
-  const currentIdx = status?.current_connector
-    ? CONNECTOR_ORDER.indexOf(status.current_connector)
-    : -1;
 
   const totalNew = status?.last_inserted ?? 0;
   const lastRun = status?.last_run_at
     ? formatDistanceToNow(parseISO(status.last_run_at), { addSuffix: true })
     : null;
 
+  // Calculate overall scraper progress percentage
+  const totalCount = CONNECTOR_ORDER.length;
+  const finishedCount = status?.progress?.length ?? 0;
+  const progressPercent = totalCount > 0 ? (finishedCount / totalCount) * 100 : 0;
+
   return (
-    <div className="bg-card border border-border/50 rounded-xl overflow-hidden">
-      {/* Header row */}
-      <div className="flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-2.5">
+    <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl overflow-hidden glass">
+      {/* Header bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4">
+        <div className="flex items-center gap-3">
           <div className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-            isRunning ? "bg-indigo-600/20" : "bg-muted/50"
+            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300",
+            isRunning ? "bg-orange-500/20 text-orange-400" : "bg-white/5 text-muted-foreground"
           )}>
             {isRunning ? (
-              <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+              <Loader2 className="w-5 h-5 animate-spin" />
             ) : justFinished ? (
-              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             ) : (
-              <RefreshCw className="w-4 h-4 text-muted-foreground" />
+              <Server className="w-5 h-5" />
             )}
           </div>
           <div>
-            <div className="text-sm font-semibold">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
               {isRunning
-                ? "Scraping in progress…"
+                ? "Indexing ATS Career Portals"
                 : justFinished
-                  ? `Done — ${totalNew} new internship${totalNew !== 1 ? "s" : ""} found`
-                  : "Manual Scrape"}
+                  ? `Scan Completed — ${totalNew} New Internships Indexed`
+                  : "ATS Curation Scraper Control"}
+              {isRunning && (
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
+              )}
+            </h2>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 font-medium">
+              {lastRun && !isRunning && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-orange-400/70" /> Last scan run {lastRun}
+                </span>
+              )}
+              {isRunning && status?.current_connector && (
+                <span className="text-orange-300/80 animate-pulse font-semibold">
+                  Scan: {status.current_connector}
+                </span>
+              )}
             </div>
-            {lastRun && !isRunning && (
-              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Last run {lastRun}
-              </div>
-            )}
-            {isRunning && status?.current_connector && (
-              <div className="text-xs text-indigo-400 animate-pulse">
-                Scanning {status.current_connector}…
-              </div>
-            )}
           </div>
         </div>
 
@@ -207,62 +269,84 @@ export function ScraperPanel() {
           {(isRunning || status?.progress?.length) ? (
             <button
               onClick={() => setExpanded((p) => !p)}
-              className="p-1.5 rounded-md hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/5 transition-all text-xs font-semibold text-muted-foreground hover:text-white"
             >
-              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              Connectors
+              {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           ) : null}
           <button
             onClick={handleTrigger}
             disabled={isRunning || triggering}
             className={cn(
-              "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all",
+              "flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300",
               isRunning || triggering
-                ? "bg-muted/50 text-muted-foreground cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm hover:shadow-indigo-500/20 hover:shadow-lg"
+                ? "bg-white/5 border border-white/5 text-muted-foreground cursor-not-allowed"
+                : "bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-lg shadow-orange-500/20"
             )}
           >
             {triggering ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Zap className="w-3.5 h-3.5" />
+              <Play className="w-3.5 h-3.5 fill-current" />
             )}
-            {isRunning ? "Running…" : "Refresh Now"}
+            {isRunning ? "Indexing..." : "Scan & Curation"}
           </button>
         </div>
       </div>
 
-      {/* Progress panel */}
+      {/* Progress timeline bar */}
+      {isRunning && (
+        <div className="w-full h-1 bg-white/5 relative">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500"
+          />
+        </div>
+      )}
+
+      {/* Expandable connector grid */}
       <AnimatePresence>
         {expanded && (isRunning || (status?.progress?.length ?? 0) > 0) && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="overflow-hidden border-t border-white/5"
           >
-            <div className="border-t border-border/50 px-5 py-3 space-y-1">
-              {CONNECTOR_ORDER.map((name) => {
-                const shortName = name === "ManualSource" ? "ManualSource" : name;
-                const result = progressMap.get(shortName);
-                const isCurrent = status?.current_connector === shortName && isRunning;
-                return (
-                  <ConnectorRow
-                    key={name}
-                    name={shortName}
-                    result={result}
-                    isCurrent={isCurrent}
-                  />
-                );
-              })}
+            <div className="px-6 py-5 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {CONNECTOR_ORDER.map((name) => {
+                  const shortName = name === "ManualSource" ? "ManualSource" : name;
+                  const result = progressMap.get(shortName);
+                  const isParallel = status?.current_connector?.startsWith("Running ") ?? false;
+                  const isCurrent = isRunning && (
+                    status?.current_connector === shortName ||
+                    (isParallel && !completedConnectors.has(shortName))
+                  );
+                  return (
+                    <ConnectorCard
+                      key={name}
+                      name={shortName}
+                      result={result}
+                      isCurrent={isCurrent}
+                    />
+                  );
+                })}
+              </div>
 
-              {/* Summary */}
+              {/* Run Metrics Summary footer */}
               {!isRunning && status?.progress?.length && (
-                <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{status.last_fetched} total listings checked</span>
-                  <span className={cn(totalNew > 0 ? "text-green-400 font-semibold" : "")}>
-                    {totalNew > 0 ? `+${totalNew} added to database` : "No new listings found"}
+                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground gap-2 font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <Database className="w-4 h-4 text-orange-400/80" />
+                    Processed {status.last_fetched} opportunities during last session
+                  </span>
+                  <span className={cn("px-2.5 py-0.5 rounded-full", totalNew > 0 ? "bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20" : "")}>
+                    {totalNew > 0 ? `+${totalNew} new openings indexed successfully` : "All monitored opportunities already up-to-date"}
                   </span>
                 </div>
               )}
@@ -271,17 +355,17 @@ export function ScraperPanel() {
         )}
       </AnimatePresence>
 
-      {/* Error */}
+      {/* Error Notice */}
       <AnimatePresence>
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-2 mx-5 mb-3 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs"
+            className="flex items-center gap-2 mx-6 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs"
           >
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            {error}
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </motion.div>
         )}
       </AnimatePresence>

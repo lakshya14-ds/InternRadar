@@ -1,6 +1,7 @@
 """Base connector contract for ATS and manual sources."""
 
 from abc import ABC, abstractmethod
+import asyncio
 from datetime import UTC, datetime
 import logging
 import re
@@ -139,6 +140,13 @@ INDIA_LOCATION_TOKENS = (
     "in",   # ISO country code in structured location fields
 )
 
+INDIA_LOCATION_PATTERN = re.compile(
+    r"(^|[\s,/\-])("
+    + "|".join(re.escape(token) for token in INDIA_LOCATION_TOKENS)
+    + r")($|[\s,/\-])",
+    re.IGNORECASE,
+)
+
 
 class BaseConnector(ABC):
     """Abstract connector that exposes normalized internships."""
@@ -146,15 +154,11 @@ class BaseConnector(ABC):
     source: str
 
     async def run(self) -> list[InternshipCreate]:
-        """Run connector safely and return an empty list on failure."""
+        """Run connector and let the scheduler record connector-level failures."""
 
-        try:
-            companies = await self.discover_companies()
-            raw_jobs = await self.fetch_jobs(companies)
-            return await self.normalize(raw_jobs)
-        except Exception:
-            logger.exception("%s connector failed", self.source)
-            return []
+        companies = await self.discover_companies()
+        raw_jobs = await self.fetch_jobs(companies)
+        return await asyncio.to_thread(self.normalize, raw_jobs)
 
     async def discover_companies(self) -> list[dict[str, Any]]:
         """Discover or return configured company boards for this connector."""
@@ -166,7 +170,7 @@ class BaseConnector(ABC):
         """Fetch raw jobs for configured companies."""
 
     @abstractmethod
-    async def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
+    def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize raw jobs into the shared internship model."""
 
     def is_internship(self, title: str, description: str = "") -> bool:
@@ -229,14 +233,7 @@ class BaseConnector(ABC):
         if not location:
             return False
 
-        loc = location.casefold().strip()
-
-        for token in INDIA_LOCATION_TOKENS:
-            pattern = r"(^|[\s,/\-])" + re.escape(token) + r"($|[\s,/\-])"
-            if re.search(pattern, loc):
-                return True
-
-        return False
+        return bool(INDIA_LOCATION_PATTERN.search(location))
 
     def build_internship(
         self,

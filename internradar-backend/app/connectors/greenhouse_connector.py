@@ -2,10 +2,15 @@
 
 from typing import Any
 
-import requests
+import asyncio
+import logging
+
+import httpx
 
 from app.connectors.base_connector import BaseConnector
 from app.models.internship import InternshipCreate
+
+logger = logging.getLogger(__name__)
 
 # Board tokens for companies known to use Greenhouse.
 # Indian companies are marked with a comment; the rest are global companies
@@ -78,26 +83,44 @@ class GreenhouseConnector(BaseConnector):
     async def fetch_jobs(self, companies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Fetch jobs from Greenhouse boards."""
 
-        jobs: list[dict[str, Any]] = []
-        for company in companies:
+        async def fetch_company(client: httpx.AsyncClient, company: dict[str, Any]) -> list[dict[str, Any]]:
             token = company["board_token"]
             try:
-                response = requests.get(
-                    f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs",
-                    params={"content": "true"},
-                    timeout=20,
+                response = await asyncio.wait_for(
+                    client.get(
+                        f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs",
+                        params={"content": "true"},
+                    ),
+                    timeout=3.0
                 )
                 response.raise_for_status()
-            except requests.RequestException:
-                # Board may not exist or be temporarily unavailable — skip silently
-                continue
-            for job in response.json().get("jobs", []):
+            except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+                logger.debug("Greenhouse board skipped: %s (%s)", token, exc)
+                return []
+
+            fetched_jobs = response.json().get("jobs", [])
+            for job in fetched_jobs:
                 job["company_name"] = company["name"]
                 job["board_token"] = token
-                jobs.append(job)
+            return fetched_jobs
+
+        timeout = httpx.Timeout(3.0)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
+        async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
+            results = await asyncio.gather(
+                *(fetch_company(client, company) for company in companies),
+                return_exceptions=True,
+            )
+
+        jobs: list[dict[str, Any]] = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug("Greenhouse board fetch failed: %s", result)
+                continue
+            jobs.extend(result)
         return jobs
 
-    async def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
+    def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize Greenhouse jobs — India locations, internships only."""
 
         internships: list[InternshipCreate] = []

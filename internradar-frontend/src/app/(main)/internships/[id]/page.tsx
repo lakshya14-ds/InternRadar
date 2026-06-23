@@ -2,14 +2,16 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, MapPin, ExternalLink, Bookmark, BookmarkCheck, Calendar, Building2, Tag, Globe } from "lucide-react";
+import { ArrowLeft, MapPin, ExternalLink, Bookmark, BookmarkCheck, Calendar, Building2, Tag, Globe, CheckCircle2, ChevronRight, Share2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { internshipsApi, usersApi } from "@/lib/api";
 import { cn, timeAgo, sourceLabel, categoryColor, getInternshipId } from "@/lib/utils";
 import { useAppStore } from "@/store/useStore";
 import { InternshipCard } from "@/components/internships/InternshipCard";
+import Link from "next/link";
 
 export default function InternshipDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,19 @@ export default function InternshipDetailPage() {
   const { data: session } = useSession();
   const { isBookmarked, toggleBookmark } = useAppStore();
   const queryClient = useQueryClient();
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Scroll Progress Tracker
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalScroll > 0) {
+        setScrollProgress(Number(((window.scrollY / totalScroll) * 100).toFixed(2)));
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const { data: internship, isLoading } = useQuery({
     queryKey: ["internship", id],
@@ -41,116 +56,240 @@ export default function InternshipDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["bookmarks"] }),
   });
 
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: internship?.title,
+        text: `Check out this internship at ${internship?.company}`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied to clipboard!");
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-8 bg-muted rounded-xl w-1/3" />
-        <div className="h-48 bg-card border border-border/50 rounded-xl" />
-        <div className="h-64 bg-card border border-border/50 rounded-xl" />
+      <div className="space-y-6 max-w-7xl mx-auto animate-pulse">
+        <div className="h-6 bg-muted rounded-xl w-32" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-44 bg-card border border-border/50 rounded-2xl" />
+            <div className="h-96 bg-card border border-border/50 rounded-2xl" />
+          </div>
+          <div className="h-96 bg-card border border-border/50 rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (!internship) {
     return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">Internship not found</p>
-        <button onClick={() => router.back()} className="mt-4 text-indigo-400 hover:text-indigo-300 text-sm">Go back</button>
+      <div className="text-center py-20 bg-card border border-border/50 rounded-2xl glass max-w-xl mx-auto mt-10">
+        <p className="text-muted-foreground mb-4">Internship opportunity not found or might have expired.</p>
+        <button onClick={() => router.back()} className="inline-flex items-center gap-1 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-semibold">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to listings
+        </button>
       </div>
     );
   }
 
-  return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl space-y-6">
-      <button onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Back to Internships
-      </button>
+  const relatedFiltered = related
+    ? related.filter((r) => getInternshipId(r) !== id).slice(0, 3)
+    : [];
 
-      {/* Main Card */}
-      <div className="bg-card border border-border/50 rounded-2xl p-6">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/20 flex items-center justify-center text-xl font-bold text-indigo-400 shrink-0">
-              {internship.company[0]?.toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-xl font-bold mb-1">{internship.title}</h1>
-              <p className="text-muted-foreground font-medium">{internship.company}</p>
-            </div>
-          </div>
+  return (
+    <div className="relative space-y-6 max-w-7xl mx-auto">
+      {/* Scroll progress indicator */}
+      <div className="fixed top-0 left-0 w-full h-1 z-50 pointer-events-none bg-orange-950/20">
+        <motion.div
+          className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      {/* Top back navigation and quick action row */}
+      <div className="flex items-center justify-between pb-2">
+        <button
+          onClick={() => router.back()}
+          className="group flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+          Back to Opportunities
+        </button>
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => bookmarkMutation.mutate()}
-            className={cn("p-2 rounded-lg border transition-all shrink-0", saved ? "bg-indigo-600/10 border-indigo-500/20 text-indigo-400" : "border-border/50 text-muted-foreground hover:text-foreground hover:bg-accent")}
+            onClick={handleShare}
+            className="p-2 rounded-xl bg-card border border-white/5 hover:border-white/10 text-muted-foreground hover:text-white transition-all duration-200"
+            title="Share Opportunity"
           >
-            {saved ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+            <Share2 className="w-4 h-4" />
           </button>
         </div>
+      </div>
 
-        {/* Metadata */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[
-            { icon: MapPin, label: "Location", value: internship.location },
-            { icon: Globe, label: "Remote", value: internship.remote ? "Yes" : "No" },
-            { icon: Tag, label: "Category", value: internship.category || "Other" },
-            { icon: Calendar, label: "Posted", value: timeAgo(internship.posted_at || internship.scraped_at) },
-          ].map((meta) => (
-            <div key={meta.label} className="flex items-start gap-2">
-              <meta.icon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs text-muted-foreground">{meta.label}</p>
-                <p className="text-sm font-medium truncate">{meta.value}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* LEFT COLUMN: Main internship content details */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Header Card */}
+          <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-[#18181b]/40 p-6 md:p-8 glass">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/3 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600/20 to-amber-600/20 border border-orange-500/20 flex items-center justify-center text-2xl font-extrabold text-orange-400 shrink-0">
+                  {internship.company[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-1 leading-snug">
+                    {internship.title}
+                  </h1>
+                  <p className="text-sm font-semibold text-orange-300 flex items-center gap-1.5">
+                    {internship.company}
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500/40" />
+                    <span className="text-xs text-muted-foreground">{internship.location}</span>
+                  </p>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          {internship.category && (
-            <span className={cn("text-xs px-3 py-1 rounded-full border", categoryColor(internship.category))}>
-              {internship.category}
-            </span>
+            <div className="flex flex-wrap gap-2 mt-6">
+              {internship.category && (
+                <span className={cn("text-[10px] font-bold px-3 py-1 rounded-full border tracking-wide uppercase", categoryColor(internship.category))}>
+                  {internship.category}
+                </span>
+              )}
+              <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-white/5 border border-white/5 text-muted-foreground tracking-wide uppercase">
+                {sourceLabel(internship.source)} Platform
+              </span>
+              <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 tracking-wide uppercase">
+                {internship.employment_type || "Internship"}
+              </span>
+            </div>
+          </div>
+
+          {/* Job Description Card */}
+          {internship.description ? (
+            <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 md:p-8 glass space-y-6">
+              <h2 className="text-base font-bold text-white tracking-wide border-b border-white/5 pb-3">
+                Job Overview & Description
+              </h2>
+              <div className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap font-sans space-y-4">
+                {internship.description}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-[#18181b]/40 border border-white/5 rounded-2xl glass text-muted-foreground">
+              Description is not directly available. Click "Apply Now" to view full details on {internship.company}&apos;s careers site.
+            </div>
           )}
-          <span className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-muted-foreground">
-            via {sourceLabel(internship.source)}
-          </span>
-          {internship.skills.slice(0, 5).map((s) => (
-            <span key={s} className="text-xs px-3 py-1 rounded-full bg-white/5 border border-white/10 text-muted-foreground">{s}</span>
-          ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          <a href={internship.url} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-colors">
-            Apply Now <ExternalLink className="w-4 h-4" />
-          </a>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Building2 className="w-3.5 h-3.5" />
-            <span>{internship.employment_type}</span>
+        {/* RIGHT COLUMN: Sticky summary card */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-20 space-y-6">
+            <div className="relative overflow-hidden rounded-2xl border border-white/5 bg-[#18181b]/40 p-6 glass">
+              <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-amber-500/3 rounded-full blur-2xl" />
+              
+              <h3 className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-4">Role Quick Information</h3>
+
+              <div className="space-y-4 mb-6">
+                {[
+                  { icon: MapPin, label: "Workplace Type", value: internship.remote ? "Remote Possible" : "In-office / Onsite" },
+                  { icon: Globe, label: "Primary Location", value: internship.location || "Multiple Locations" },
+                  { icon: Calendar, label: "Published Date", value: timeAgo(internship.posted_at || internship.scraped_at) },
+                  { icon: Building2, label: "Tracked Portal", value: sourceLabel(internship.source) },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex gap-3">
+                    <div className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-orange-400 shrink-0 h-fit">
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">{item.label}</p>
+                      <p className="text-xs font-semibold text-white mt-0.5">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {internship.skills && internship.skills.length > 0 && (
+                <div className="mb-6 border-t border-white/5 pt-4">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-3">Key Skills Tracked</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {internship.skills.map((skill) => (
+                      <span key={skill} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-orange-500/10 border border-orange-500/20 text-orange-300">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action CTAs */}
+              <div className="space-y-3 pt-2">
+                <a
+                  href={internship.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-500/20 transition-all duration-300"
+                >
+                  Apply Now <ExternalLink className="w-4 h-4" />
+                </a>
+
+                {session && (
+                  <button
+                    onClick={() => bookmarkMutation.mutate()}
+                    className={cn(
+                      "flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold border transition-all duration-200",
+                      saved
+                        ? "bg-orange-500/15 border-orange-500/30 text-orange-300 hover:bg-orange-500/20"
+                        : "bg-white/5 border-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
+                    )}
+                  >
+                    {saved ? (
+                      <>
+                        <BookmarkCheck className="w-4 h-4 text-orange-400" /> Saved Bookmark
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark className="w-4 h-4" /> Bookmark for Later
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/5 bg-[#18181b]/20 p-4 text-[11px] text-muted-foreground flex gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <span>InternRadar regularly scans ATS career boards daily. All links redirect directly to the verified employer site.</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Description */}
-      {internship.description && (
-        <div className="bg-card border border-border/50 rounded-2xl p-6">
-          <h2 className="font-semibold mb-4">About this Internship</h2>
-          <div className="prose prose-sm prose-invert max-w-none">
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap text-sm">{internship.description}</p>
+      {/* RELATED OPPORTUNITIES */}
+      {relatedFiltered.length > 0 && (
+        <div className="pt-8 border-t border-white/5">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-base font-bold text-white tracking-wide">Related Opportunities</h2>
+              <p className="text-xs text-muted-foreground">Similar roles you might also be interested in</p>
+            </div>
+            {internship.category && (
+              <Link href={`/internships?category=${encodeURIComponent(internship.category)}`} className="text-xs font-semibold text-orange-400 hover:text-orange-300 flex items-center gap-0.5">
+                Browse category <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Related */}
-      {related && related.filter((r) => getInternshipId(r) !== id).length > 0 && (
-        <div>
-          <h2 className="font-semibold mb-4">Related Internships</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {related.filter((r) => getInternshipId(r) !== id).slice(0, 3).map((r) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {relatedFiltered.map((r) => (
               <InternshipCard key={getInternshipId(r)} internship={r} compact />
             ))}
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

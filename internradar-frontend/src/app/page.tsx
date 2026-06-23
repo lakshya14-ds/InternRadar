@@ -39,12 +39,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#030712] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-[#090514] text-white overflow-x-hidden">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#030712]/80 backdrop-blur-xl">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#090514]/80 backdrop-blur-xl">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-            <Briefcase className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-lg shadow-orange-500/20">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-lg tracking-tight">InternRadar</span>
         </div>
@@ -52,7 +52,7 @@ export default function LandingPage() {
           <Link href="/login" className="text-sm text-muted-foreground hover:text-white transition-colors px-3 py-1.5">
             Sign in
           </Link>
-          <Link href="/signup" className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">
+          <Link href="/signup" className="text-sm bg-orange-600 hover:bg-orange-500 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">
             Get Started
           </Link>
         </div>
@@ -61,11 +61,11 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-24 px-6 text-center">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/10 rounded-full blur-3xl" />
-          <div className="absolute top-40 left-1/4 w-[300px] h-[300px] bg-purple-600/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-orange-600/5 rounded-full blur-3xl" />
+          <div className="absolute top-40 left-1/4 w-[300px] h-[300px] bg-amber-600/5 rounded-full blur-3xl" />
         </div>
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-sm mb-6 animate-pulse">
             <Zap className="w-3.5 h-3.5" />
             <span>Real-time internship aggregation from 350+ companies</span>
           </div>
@@ -78,7 +78,7 @@ export default function LandingPage() {
             Track internships from startups, ATS platforms, research labs and top organizations — all in one place, updated every 30 minutes.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/signup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105">
+            <Link href="/signup" className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white px-6 py-3 rounded-xl font-semibold transition-all hover:scale-105 shadow-lg shadow-orange-500/15">
               Create Free Account <ArrowRight className="w-4 h-4" />
             </Link>
             <Link href="/internships" className="inline-flex items-center gap-2 border border-white/10 hover:border-white/20 text-white/80 hover:text-white px-6 py-3 rounded-xl font-medium transition-all">
@@ -94,7 +94,7 @@ export default function LandingPage() {
           {STATS.map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }}
               className="glass rounded-2xl p-6 text-center">
-              <s.icon className="w-8 h-8 text-indigo-400 mx-auto mb-3" />
+              <s.icon className="w-8 h-8 text-orange-400 mx-auto mb-3" />
               <div className="text-3xl font-bold mb-1">{s.value}</div>
               <div className="text-muted-foreground text-sm">{s.label}</div>
             </motion.div>
@@ -112,26 +112,32 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {SAMPLE_JOBS.map((job, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.05 * i }}
-                className="glass rounded-xl p-4 hover:border-indigo-500/30 transition-all cursor-pointer card-hover">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-sm font-bold text-indigo-400">
-                    {job.company[0]}
+              >
+                <Link
+                  href={`/internships?category=${encodeURIComponent(job.category)}`}
+                  aria-label={`View ${job.category} internships like ${job.title}`}
+                  className="block glass rounded-xl p-4 hover:border-orange-500/30 transition-all card-hover focus:outline-none focus:ring-2 focus:ring-orange-500/60"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-sm font-bold text-orange-400">
+                      {job.company[0]}
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${CATEGORY_COLORS[job.category] || "text-gray-400 bg-gray-500/10"}`}>
+                      {job.category}
+                    </span>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${CATEGORY_COLORS[job.category] || "text-gray-400 bg-gray-500/10"}`}>
-                    {job.category}
-                  </span>
-                </div>
-                <div className="font-semibold text-sm mb-1">{job.title}</div>
-                <div className="text-muted-foreground text-xs mb-2">{job.company}</div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
-                  <span className="text-indigo-400/70">{job.source}</span>
-                </div>
+                  <div className="font-semibold text-sm mb-1">{job.title}</div>
+                  <div className="text-muted-foreground text-xs mb-2">{job.company}</div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{job.location}</span>
+                    <span className="text-orange-400/70">{job.source}</span>
+                  </div>
+                </Link>
               </motion.div>
             ))}
           </div>
           <div className="text-center mt-8">
-            <Link href="/internships" className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-medium transition-colors">
+            <Link href="/internships" className="inline-flex items-center gap-2 text-orange-400 hover:text-orange-300 text-sm font-medium transition-colors">
               View all internships <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -148,9 +154,9 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {FEATURES.map((f, i) => (
               <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.05 * i }}
-                className="glass rounded-xl p-5">
-                <div className="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-4">
-                  <f.icon className="w-5 h-5 text-indigo-400" />
+                className="glass rounded-xl p-5 text-left">
+                <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-4">
+                  <f.icon className="w-5 h-5 text-orange-400" />
                 </div>
                 <div className="font-semibold mb-2">{f.title}</div>
                 <div className="text-muted-foreground text-sm leading-relaxed">{f.desc}</div>
@@ -187,10 +193,10 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="py-20 px-6">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
-          className="max-w-3xl mx-auto text-center glass rounded-3xl p-12 border border-indigo-500/20">
+          className="max-w-3xl mx-auto text-center glass rounded-3xl p-12 border border-orange-500/20">
           <h2 className="text-3xl font-bold mb-4">Start discovering internships today</h2>
           <p className="text-muted-foreground mb-8">Join thousands of students who use InternRadar to find their perfect internship.</p>
-          <Link href="/signup" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-semibold transition-all hover:scale-105">
+          <Link href="/signup" className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white px-8 py-3 rounded-xl font-semibold transition-all hover:scale-105 shadow-lg shadow-orange-500/15">
             Create Free Account <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -199,7 +205,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-white/5 py-8 px-6 text-center text-muted-foreground text-sm">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Briefcase className="w-4 h-4 text-indigo-400" />
+          <img src="/logo.png" alt="Logo" className="w-5 h-5 object-cover" />
           <span className="font-semibold text-white">InternRadar</span>
         </div>
         <p>© 2026 InternRadar. Discover India&apos;s internship opportunities.</p>

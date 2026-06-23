@@ -4,7 +4,8 @@ from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorCollection
 from fastapi import APIRouter, Depends, Query
-
+from bson import ObjectId
+from fastapi import HTTPException
 from app.database import get_internship_collection
 from app.models.internship import InternshipInDB
 from app.search.search_service import SearchService
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/internships", tags=["internships"])
 @router.get("", response_model=list[InternshipInDB])
 async def list_internships(
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(10000, ge=1, le=100000),
     collection: AsyncIOMotorCollection = Depends(get_internship_collection),
 ) -> list[InternshipInDB]:
     """Return paginated India internships ordered by posting date."""
@@ -26,7 +27,7 @@ async def list_internships(
 
 @router.get("/latest", response_model=list[InternshipInDB])
 async def latest_internships(
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(10000, ge=1, le=100000),
     collection: AsyncIOMotorCollection = Depends(get_internship_collection),
 ) -> list[InternshipInDB]:
     """Return the latest India internships."""
@@ -46,7 +47,7 @@ async def search_internships(
         default=None,
         description="ISO-8601 datetime — return only internships posted after this timestamp",
     ),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(10000, ge=1, le=100000),
     collection: AsyncIOMotorCollection = Depends(get_internship_collection),
 ) -> list[InternshipInDB]:
     """Search India internships by common filters.
@@ -112,12 +113,36 @@ async def remote_internships(
 
     return await InternshipService(collection).remote()
 
-
 @router.get("/company/{company}", response_model=list[InternshipInDB])
 async def internships_by_company(
     company: str,
     collection: AsyncIOMotorCollection = Depends(get_internship_collection),
 ) -> list[InternshipInDB]:
-    """Return internships for a company (case-insensitive)."""
-
     return await InternshipService(collection).by_company(company)
+
+
+@router.get("/{internship_id}", response_model=InternshipInDB)
+async def get_internship(
+    internship_id: str,
+    collection: AsyncIOMotorCollection = Depends(get_internship_collection),
+) -> InternshipInDB:
+
+    if not ObjectId.is_valid(internship_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid internship ID"
+        )
+
+    internship = await collection.find_one(
+        {"_id": ObjectId(internship_id)}
+    )
+
+    if not internship:
+        raise HTTPException(
+            status_code=404,
+            detail="Internship not found"
+        )
+
+    return InternshipInDB(**internship)
+
+

@@ -2,10 +2,15 @@
 
 from typing import Any
 
-import requests
+import asyncio
+import logging
+
+import httpx
 
 from app.connectors.base_connector import BaseConnector
 from app.models.internship import InternshipCreate
+
+logger = logging.getLogger(__name__)
 
 # SmartRecruiters company slugs for Indian and global companies with India offices.
 SMARTRECRUITERS_COMPANY_SLUGS: list[str] = [
@@ -56,22 +61,42 @@ class SmartRecruitersConnector(BaseConnector):
     async def fetch_jobs(self, companies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Fetch SmartRecruiters postings."""
 
-        jobs: list[dict[str, Any]] = []
-        for company in companies:
+        async def fetch_company(client: httpx.AsyncClient, company: dict[str, Any]) -> list[dict[str, Any]]:
             try:
-                response = requests.get(
-                    f"https://api.smartrecruiters.com/v1/companies/{company['slug']}/postings",
-                    timeout=20,
+                response = await asyncio.wait_for(
+                    client.get(
+                        f"https://api.smartrecruiters.com/v1/companies/{company['slug']}/postings",
+                    ),
+                    timeout=3.0
                 )
                 response.raise_for_status()
-            except requests.RequestException:
-                continue
-            for job in response.json().get("content", []):
+            except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+                logger.debug("SmartRecruiters company skipped: %s (%s)", company["slug"], exc)
+                return []
+
+            jobs = response.json().get("content", [])
+            for job in jobs:
                 job["company_name"] = company["name"]
-                jobs.append(job)
+                job["company_slug"] = company["slug"]
+            return jobs
+
+        timeout = httpx.Timeout(3.0)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
+        async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
+            results = await asyncio.gather(
+                *(fetch_company(client, company) for company in companies),
+                return_exceptions=True,
+            )
+
+        jobs: list[dict[str, Any]] = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug("SmartRecruiters company fetch failed: %s", result)
+                continue
+            jobs.extend(result)
         return jobs
 
-    async def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
+    def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize SmartRecruiters jobs — India locations, internships only."""
 
         internships: list[InternshipCreate] = []
@@ -91,13 +116,17 @@ class SmartRecruitersConnector(BaseConnector):
             if not self.is_india_location(location):
                 continue
 
+            company_slug = job.get("company_slug")
+            job_id = job.get("id")
+            url = f"https://jobs.smartrecruiters.com/{company_slug}/{job_id}" if company_slug and job_id else job.get("ref", "")
+
             internships.append(
                 self.build_internship(
                     external_id=job.get("id", ""),
                     company=job.get("company_name", ""),
                     title=title,
                     location=location or "India",
-                    url=job.get("ref", ""),
+                    url=url,
                     description=description,
                     tags=["ats", "smartrecruiters"],
                 )

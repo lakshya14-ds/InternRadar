@@ -2,10 +2,15 @@
 
 from typing import Any
 
-import requests
+import asyncio
+import logging
+
+import httpx
 
 from app.connectors.base_connector import BaseConnector
 from app.models.internship import InternshipCreate
+
+logger = logging.getLogger(__name__)
 
 # Lever company slugs.  Indian companies and global companies with India offices.
 LEVER_COMPANY_SLUGS: list[str] = [
@@ -70,24 +75,43 @@ class LeverConnector(BaseConnector):
     async def fetch_jobs(self, companies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Fetch Lever postings."""
 
-        jobs: list[dict[str, Any]] = []
-        for company in companies:
+        async def fetch_company(client: httpx.AsyncClient, company: dict[str, Any]) -> list[dict[str, Any]]:
             slug = company["slug"]
             try:
-                response = requests.get(
-                    f"https://api.lever.co/v0/postings/{slug}",
-                    params={"mode": "json"},
-                    timeout=20,
+                response = await asyncio.wait_for(
+                    client.get(
+                        f"https://api.lever.co/v0/postings/{slug}",
+                        params={"mode": "json"},
+                    ),
+                    timeout=3.0
                 )
                 response.raise_for_status()
-            except requests.RequestException:
-                continue
-            for job in response.json():
+            except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+                logger.debug("Lever company skipped: %s (%s)", slug, exc)
+                return []
+
+            jobs = response.json()
+            for job in jobs:
                 job["company_name"] = company["name"]
-                jobs.append(job)
+            return jobs
+
+        timeout = httpx.Timeout(3.0)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
+        async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
+            results = await asyncio.gather(
+                *(fetch_company(client, company) for company in companies),
+                return_exceptions=True,
+            )
+
+        jobs: list[dict[str, Any]] = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug("Lever company fetch failed: %s", result)
+                continue
+            jobs.extend(result)
         return jobs
 
-    async def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
+    def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize Lever jobs — India locations, internships only."""
 
         internships: list[InternshipCreate] = []

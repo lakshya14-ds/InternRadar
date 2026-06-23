@@ -11,7 +11,7 @@ from pymongo.errors import DuplicateKeyError
 from app.classification.internship_classifier import InternshipClassifier
 from app.connectors.base_connector import INDIA_LOCATION_TOKENS
 from app.models.internship import InternshipCreate, InternshipInDB
-from app.utils.deduplication import fingerprint_for_internship, internship_exists
+from app.utils.deduplication import fingerprint_for_internship
 
 logger = logging.getLogger(__name__)
 
@@ -54,19 +54,33 @@ class InternshipService:
 
         # Deduplication
         fingerprint = fingerprint_for_internship(internship)
-        if await internship_exists(self.collection, fingerprint):
-            return None
-
         document = internship.model_dump()
         document["fingerprint"] = fingerprint
         document["scraped_at"] = datetime.now(UTC)
         document["category"] = internship.category or self.classifier.classify(internship)
 
-        try:
-            result = await self.collection.insert_one(document)
-        except DuplicateKeyError:
+        if hasattr(self.collection, "update_one"):
+            try:
+                result = await self.collection.update_one(
+                    {"fingerprint": fingerprint},
+                    {"$setOnInsert": document},
+                    upsert=True,
+                )
+            except DuplicateKeyError:
+                return None
+
+            if result.upserted_id is None:
+                return None
+
+            document["_id"] = result.upserted_id
+            return InternshipInDB.model_validate(document)
+
+        # Test fakes may not implement Mongo's atomic upsert API.
+        existing = await self.collection.find_one({"fingerprint": fingerprint}, {"_id": 1})
+        if existing is not None:
             return None
 
+        result = await self.collection.insert_one(document)
         document["_id"] = result.inserted_id
         return InternshipInDB.model_validate(document)
 

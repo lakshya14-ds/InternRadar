@@ -1,5 +1,6 @@
 """SMTP email notification provider."""
 
+import asyncio
 from email.message import EmailMessage
 import logging
 import smtplib
@@ -36,10 +37,13 @@ class EmailProvider(NotificationProvider):
             f"Apply: {internship.url}\n"
         )
         try:
-            with smtplib.SMTP(self.host, self.port, timeout=20) as smtp:
-                smtp.starttls()
-                if self.username and self.password:
-                    smtp.login(self.username, self.password)
-                smtp.send_message(message)
+            await asyncio.to_thread(self._send_message, message)
         except OSError:
             logger.exception("Email notification failed")
+
+    def _send_message(self, message: EmailMessage) -> None:
+        with smtplib.SMTP(self.host, self.port, timeout=5) as smtp:
+            smtp.starttls()
+            if self.username and self.password:
+                smtp.login(self.username, self.password)
+            smtp.send_message(message)

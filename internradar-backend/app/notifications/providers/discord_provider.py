@@ -2,7 +2,7 @@
 
 import logging
 
-import requests
+import httpx
 
 from app.models.internship import InternshipInDB
 from app.notifications.providers.base import NotificationProvider
@@ -25,5 +25,6 @@ class DiscordProvider(NotificationProvider):
                 f"{internship.url}"
             )
         }
-        response = requests.post(self.webhook_url, json=payload, timeout=20)
-        response.raise_for_status()
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
+            response = await client.post(self.webhook_url, json=payload)
+            response.raise_for_status()

@@ -2,10 +2,15 @@
 
 from typing import Any
 
-import requests
+import asyncio
+import logging
+
+import httpx
 
 from app.connectors.base_connector import BaseConnector
 from app.models.internship import InternshipCreate
+
+logger = logging.getLogger(__name__)
 
 # Ashby organization slugs.
 ASHBY_ORGANIZATION_SLUGS: list[str] = [
@@ -75,24 +80,41 @@ class AshbyConnector(BaseConnector):
     async def fetch_jobs(self, companies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Fetch Ashby postings."""
 
-        jobs: list[dict[str, Any]] = []
-        for company in companies:
+        async def fetch_company(client: httpx.AsyncClient, company: dict[str, Any]) -> list[dict[str, Any]]:
             slug = company["slug"]
             try:
-                response = requests.get(
-                    f"https://api.ashbyhq.com/posting-api/job-board/{slug}",
-                    timeout=20,
+                response = await asyncio.wait_for(
+                    client.get(f"https://api.ashbyhq.com/posting-api/job-board/{slug}"),
+                    timeout=3.0
                 )
                 response.raise_for_status()
-            except requests.RequestException:
-                continue
-            for job in response.json().get("jobs", []):
+            except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+                logger.debug("Ashby organization skipped: %s (%s)", slug, exc)
+                return []
+
+            jobs = response.json().get("jobs", [])
+            for job in jobs:
                 job["company_name"] = company["name"]
                 job["organization_slug"] = slug
-                jobs.append(job)
+            return jobs
+
+        timeout = httpx.Timeout(3.0)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
+        async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
+            results = await asyncio.gather(
+                *(fetch_company(client, company) for company in companies),
+                return_exceptions=True,
+            )
+
+        jobs: list[dict[str, Any]] = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug("Ashby organization fetch failed: %s", result)
+                continue
+            jobs.extend(result)
         return jobs
 
-    async def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
+    def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize Ashby jobs — India locations, internships only."""
 
         internships: list[InternshipCreate] = []

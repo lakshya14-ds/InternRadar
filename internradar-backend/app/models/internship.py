@@ -10,14 +10,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_valid
 class InternshipBase(BaseModel):
     """Normalized internship data shared by connectors and APIs."""
 
-    external_id: str
-    source: str
-    company: str
-    title: str
-    location: str
+    external_id: str = ""
+    source: str = ""
+    company: str = ""
+    title: str = ""
+    location: str = ""
     remote: bool = False
     employment_type: str = "Internship"
-    url: str
+    url: str = ""
     posted_at: datetime | None = None
     description: str = ""
     skills: list[str] = Field(default_factory=list)
@@ -44,7 +44,7 @@ class InternshipInDB(InternshipBase):
 
     id: str | None = Field(default=None, alias="_id")
     scraped_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    fingerprint: str
+    fingerprint: str = ""
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 

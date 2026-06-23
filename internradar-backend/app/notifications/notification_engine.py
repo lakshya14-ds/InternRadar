@@ -1,5 +1,6 @@
 """Notification engine that fans out to enabled providers."""
 
+import asyncio
 import logging
 
 from app.config import Settings
@@ -29,8 +30,13 @@ class NotificationEngine:
         ]
 
     async def send_new_internship_alert(self, internship: InternshipInDB) -> None:
-        for provider in self.providers:
+        async def send_provider(provider) -> None:
             try:
                 await provider.send(internship)
             except Exception:
                 logger.exception("%s provider failed", provider.__class__.__name__)
+
+        await asyncio.gather(
+            *(send_provider(provider) for provider in self.providers),
+            return_exceptions=True,
+        )

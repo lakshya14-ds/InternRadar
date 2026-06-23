@@ -43,7 +43,7 @@ export function FilterSidebar({ filters, onChange, onReset }: Props) {
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Type</p>
         <button
           onClick={() => set({ remote: filters.remote === true ? null : true })}
-          className={cn("w-full text-left px-3 py-2 rounded-lg text-sm transition-all", filters.remote === true ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/20" : "text-muted-foreground hover:bg-accent")}
+          className={cn("w-full text-left px-3 py-2 rounded-lg text-sm transition-all", filters.remote === true ? "bg-orange-600/10 text-orange-400 border border-orange-500/20" : "text-muted-foreground hover:bg-accent")}
         >
           Remote Only
         </button>
@@ -55,7 +55,7 @@ export function FilterSidebar({ filters, onChange, onReset }: Props) {
         <div className="space-y-0.5">
           {PERIODS.map((p) => (
             <button key={p.value} onClick={() => set({ period: p.value as Filters["period"] })}
-              className={cn("w-full text-left px-3 py-2 rounded-lg text-sm transition-all", filters.period === p.value ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/20" : "text-muted-foreground hover:bg-accent")}>
+              className={cn("w-full text-left px-3 py-2 rounded-lg text-sm transition-all", filters.period === p.value ? "bg-orange-600/10 text-orange-400 border border-orange-500/20" : "text-muted-foreground hover:bg-accent")}>
               {p.label}
             </button>
           ))}
@@ -68,7 +68,7 @@ export function FilterSidebar({ filters, onChange, onReset }: Props) {
         <div className="space-y-0.5 max-h-64 overflow-y-auto">
           {CATEGORIES.map((cat) => (
             <button key={cat} onClick={() => set({ category: filters.category === cat ? "" : cat })}
-              className={cn("w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all", filters.category === cat ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/20" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
+              className={cn("w-full text-left px-3 py-1.5 rounded-lg text-xs transition-all", filters.category === cat ? "bg-orange-600/10 text-orange-400 border border-orange-500/20" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
               {cat}
             </button>
           ))}
@@ -81,7 +81,7 @@ export function FilterSidebar({ filters, onChange, onReset }: Props) {
         <div className="space-y-0.5">
           {SOURCES.map((src) => (
             <button key={src} onClick={() => set({ source: filters.source === src ? "" : src })}
-              className={cn("w-full text-left px-3 py-1.5 rounded-lg text-xs capitalize transition-all", filters.source === src ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/20" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
+              className={cn("w-full text-left px-3 py-1.5 rounded-lg text-xs capitalize transition-all", filters.source === src ? "bg-orange-600/10 text-orange-400 border border-orange-500/20" : "text-muted-foreground hover:bg-accent hover:text-foreground")}>
               {src}
             </button>
           ))}

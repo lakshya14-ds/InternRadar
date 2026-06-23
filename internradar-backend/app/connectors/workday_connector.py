@@ -1,11 +1,17 @@
 """Workday ATS connector and reusable parser."""
 
 from typing import Any
+from urllib.parse import urlparse
 
-import requests
+import asyncio
+import logging
+
+import httpx
 
 from app.connectors.base_connector import BaseConnector
 from app.models.internship import InternshipCreate
+
+logger = logging.getLogger(__name__)
 
 # Workday career-site API endpoints for companies with India offices.
 # Pattern: https://<tenant>.wd<n>.myworkdayjobs.com/wday/cxs/<tenant>/<board>/jobs
@@ -117,20 +123,65 @@ class WorkdayConnector(BaseConnector):
     async def fetch_jobs(self, companies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Fetch jobs from configured Workday endpoints."""
 
-        jobs: list[dict[str, Any]] = []
-        for company in companies:
+        async def fetch_company(client: httpx.AsyncClient, company: dict[str, Any]) -> list[dict[str, Any]]:
+            url = company["url"]
+            parsed_url = urlparse(url)
+            origin = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            
+            # Extract board from URL: e.g. /wday/cxs/infosys/Infosys/jobs -> parts[3]
+            parts = parsed_url.path.strip("/").split("/")
+            board = parts[3] if len(parts) >= 4 else company.get("name", "")
+            
+            referer = f"{origin}/en-US/{board}"
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Origin": origin,
+                "Referer": referer
+            }
+            
+            payload = {
+                "appliedFacets": {},
+                "limit": 20,
+                "offset": 0,
+                "searchText": ""
+            }
+
             try:
-                response = requests.get(company["url"], timeout=20)
+                response = await asyncio.wait_for(
+                    client.post(url, json=payload, headers=headers),
+                    timeout=3.0
+                )
                 response.raise_for_status()
-            except requests.RequestException:
-                continue
-            for job in self.parser.extract_jobs(response.json()):
+            except (httpx.HTTPError, asyncio.TimeoutError) as exc:
+                logger.debug("Workday site skipped: %s (%s)", company.get("name", ""), exc)
+                return []
+
+            jobs = self.parser.extract_jobs(response.json())
+            for job in jobs:
                 job["company_name"] = company.get("name", "")
                 job["careers_url"] = company.get("url", "")
-                jobs.append(job)
+            return jobs
+
+        timeout = httpx.Timeout(3.0)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
+        async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
+            results = await asyncio.gather(
+                *(fetch_company(client, company) for company in companies),
+                return_exceptions=True,
+            )
+
+        jobs: list[dict[str, Any]] = []
+        for result in results:
+            if isinstance(result, Exception):
+                logger.debug("Workday site fetch failed: %s", result)
+                continue
+            jobs.extend(result)
         return jobs
 
-    async def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
+    def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize Workday jobs — India locations, internships only."""
 
         internships: list[InternshipCreate] = []
@@ -148,13 +199,24 @@ class WorkdayConnector(BaseConnector):
 
             external_path = job.get("externalPath", "")
             base_url = job.get("careers_url", "")
+            url = base_url
+            if external_path and base_url:
+                parsed_url = urlparse(base_url)
+                host = parsed_url.netloc
+                parts = parsed_url.path.strip("/").split("/")
+                board = parts[3] if len(parts) >= 4 else ""
+                if board:
+                    url = f"https://{host}/en-US/{board}{external_path}"
+                else:
+                    url = f"https://{host}/en-US{external_path}"
+
             internships.append(
                 self.build_internship(
                     external_id=str(job.get("bulletFields", [external_path])[0] or external_path),
                     company=job.get("company_name", ""),
                     title=title,
                     location=location,
-                    url=f"{base_url}{external_path}" if external_path else base_url,
+                    url=url,
                     description=description,
                     tags=["ats", "workday"],
                 )

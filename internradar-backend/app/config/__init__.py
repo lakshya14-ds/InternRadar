@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     mongo_uri: str = Field(..., alias="MONGO_URI")
     db_name: str = Field("internradar", alias="DB_NAME")
+    jwt_secret: str = "super-secret-key"
+    jwt_expire_days: int = 7
     bot_token: str | None = Field(None, alias="BOT_TOKEN")
     chat_id: str | None = Field(None, alias="CHAT_ID")
     scraper_interval_minutes: int = Field(30, alias="SCRAPER_INTERVAL_MINUTES")

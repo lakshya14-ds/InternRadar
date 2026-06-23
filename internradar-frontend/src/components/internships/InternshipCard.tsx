@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, MapPin, Bookmark, BookmarkCheck, Calendar } from "lucide-react";
+import { ExternalLink, MapPin, Bookmark, BookmarkCheck, Calendar, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,63 +38,96 @@ export function InternshipCard({ internship, compact }: Props) {
   });
 
   return (
-    <motion.div whileHover={{ y: -2 }} className="bg-card border border-border/50 rounded-xl p-4 hover:border-indigo-500/30 transition-all hover:shadow-lg hover:shadow-indigo-500/5 flex flex-col h-full">
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/20 flex items-center justify-center text-sm font-bold text-indigo-400 shrink-0">
-          {internship.company[0]?.toUpperCase()}
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="relative flex flex-col h-full rounded-2xl border border-white/5 bg-[#18181b]/40 p-5 glass hover:border-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 group overflow-hidden"
+    >
+      {/* Background glow highlights */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/3 rounded-full blur-3xl pointer-events-none group-hover:bg-orange-500/5 transition-all duration-300 -z-10" />
+
+      <div className="flex items-start justify-between mb-4 gap-2">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-500/15 via-amber-500/10 to-yellow-500/5 border border-orange-500/20 flex items-center justify-center text-sm font-extrabold text-orange-300 group-hover:scale-105 transition-transform duration-200 shrink-0 shadow-inner">
+          {internship.company[0]?.toUpperCase() || "I"}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {internship.remote && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">Remote</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wide uppercase">
+              Remote
+            </span>
           )}
           {session && (
-            <button
-              onClick={(e) => { e.preventDefault(); bookmarkMutation.mutate(); }}
-              className={cn("p-1 rounded-md transition-colors", saved ? "text-indigo-400 hover:text-indigo-300" : "text-muted-foreground hover:text-foreground hover:bg-accent")}
+            <motion.button
+              whileTap={{ scale: 0.85 }}
+              onClick={(e) => {
+                e.preventDefault();
+                bookmarkMutation.mutate();
+              }}
+              className={cn(
+                "p-1.5 rounded-lg border transition-all duration-200",
+                saved
+                  ? "bg-orange-500/10 border-orange-500/30 text-orange-300 hover:bg-orange-500/20"
+                  : "bg-white/5 border-transparent text-muted-foreground hover:text-foreground hover:bg-white/10"
+              )}
             >
-              {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-            </button>
+              {saved ? (
+                <BookmarkCheck className="w-4 h-4 text-orange-400" />
+              ) : (
+                <Bookmark className="w-4 h-4" />
+              )}
+            </motion.button>
           )}
         </div>
       </div>
 
-      <Link href={`/internships/${id}`} className="flex-1 group">
-        <div className="font-semibold text-sm mb-1 group-hover:text-indigo-400 transition-colors line-clamp-2">{internship.title}</div>
-        <div className="text-muted-foreground text-xs mb-3">{internship.company}</div>
+      <Link href={`/internships/${id}`} className="flex-1 flex flex-col group">
+        <div className="font-bold text-sm text-white group-hover:text-orange-300 transition-colors duration-200 line-clamp-2 leading-snug mb-1">
+          {internship.title}
+        </div>
+        <div className="text-muted-foreground text-xs font-semibold hover:text-white transition-colors mb-4 flex items-center gap-1.5">
+          {internship.company}
+          {internship.remote && <span className="w-1 h-1 rounded-full bg-orange-500/50" />}
+        </div>
 
         {!compact && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1.5 mb-4">
             {internship.category && (
-              <span className={cn("text-xs px-2 py-0.5 rounded-full border", categoryColor(internship.category))}>
+              <span
+                className={cn(
+                  "text-[10px] font-bold px-2.5 py-0.5 rounded-full border tracking-wide uppercase",
+                  categoryColor(internship.category)
+                )}
+              >
                 {internship.category}
               </span>
             )}
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/5">
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/5 tracking-wide uppercase">
               {sourceLabel(internship.source)}
             </span>
           </div>
         )}
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
-          <span className="flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            <span className="truncate max-w-[120px]">{internship.location}</span>
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-auto pt-1 font-medium">
+          <span className="flex items-center gap-1.5 max-w-[140px]">
+            <MapPin className="w-3.5 h-3.5 text-orange-400/70" />
+            <span className="truncate">{internship.location || "Worldwide"}</span>
           </span>
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
+          <span className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-orange-400/70" />
             {timeAgo(internship.posted_at || internship.scraped_at)}
           </span>
         </div>
       </Link>
 
-      <div className="mt-3 pt-3 border-t border-border/50">
+      <div className="mt-4 pt-4 border-t border-white/5">
         <a
           href={internship.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-medium bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 transition-colors"
+          className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-transparent hover:from-orange-600 hover:to-orange-500 text-orange-300 hover:text-white border border-orange-500/20 hover:border-transparent transition-all duration-300 shadow-sm"
         >
-          Apply Now <ExternalLink className="w-3 h-3" />
+          <span>Apply Now</span>
+          <ExternalLink className="w-3.5 h-3.5" />
         </a>
       </div>
     </motion.div>

@@ -3,9 +3,9 @@
 from collections.abc import AsyncIterator
 import logging
 from contextlib import asynccontextmanager
-
+from app.routers import auth, users
 from fastapi import FastAPI
-
+from app.routers import stats
 from app.config import get_settings
 from app.database import mongo
 from app.routers.companies import router as companies_router
@@ -39,3 +39,6 @@ app.include_router(health_router)
 app.include_router(companies_router)
 app.include_router(internships_router)
 app.include_router(scraper_router)
+app.include_router(stats.router)
+app.include_router(auth.router)
+app.include_router(users.router)
