@@ -100,6 +100,6 @@ async def validate_job_url(url: str) -> tuple[bool, str, str, str]:
 
             return True, original_url, canonical_url, final_url
 
-    except Exception as exc:
-        logger.info("URL validation failed: Request exception for %s: %s", url, exc)
-        return False, original_url, canonical_url, final_url
+        except Exception as exc:
+            logger.info("URL validation failed: Request exception for %s: %s", url, exc)
+            return False, original_url, canonical_url, final_url
