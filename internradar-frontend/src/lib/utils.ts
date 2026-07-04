@@ -26,9 +26,16 @@ export function sourceLabel(source: string): string {
     ashby: "Ashby",
     workday: "Workday",
     smartrecruiters: "SmartRecruiters",
+    yc: "YC Jobs",
+    wellfound: "Wellfound",
+    simplify: "Simplify",
+    ripplematch: "RippleMatch",
+    handshake: "Handshake",
+    jsearch: "JSearch",
+    internshala: "Internshala",
     manual: "Manual",
   };
-  return map[source] || source;
+  return map[source.toLowerCase()] || source;
 }
 
 export function categoryColor(category: string | null): string {

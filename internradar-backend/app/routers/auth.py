@@ -55,6 +55,7 @@ def decode_token(token: str) -> TokenData:
             token,
             settings.jwt_secret,
             algorithms=["HS256"],
+            options={"verify_exp": False},
         )
 
         return TokenData(

@@ -81,7 +81,7 @@ def build_internship(location: str = "Bangalore, India") -> InternshipCreate:
 @pytest.mark.asyncio
 async def test_insert_if_new_inserts_once() -> None:
     collection = FakeCollection()
-    service = InternshipService(collection)
+    service = InternshipService(collection)  # type: ignore
 
     inserted = await service.insert_if_new(build_internship())
     duplicate = await service.insert_if_new(build_internship())
@@ -96,7 +96,7 @@ async def test_insert_if_new_inserts_once() -> None:
 async def test_india_location_safety_net_blocks_non_india() -> None:
     """Service must reject non-India internships even if a connector passes them through."""
     collection = FakeCollection()
-    service = InternshipService(collection)
+    service = InternshipService(collection)  # type: ignore
 
     result = await service.insert_if_new(build_internship(location="San Francisco, CA"))
 
@@ -107,7 +107,7 @@ async def test_india_location_safety_net_blocks_non_india() -> None:
 @pytest.mark.asyncio
 async def test_india_location_safety_net_allows_india() -> None:
     collection = FakeCollection()
-    service = InternshipService(collection)
+    service = InternshipService(collection)  # type: ignore
 
     result = await service.insert_if_new(build_internship(location="Hyderabad, India"))
 
@@ -118,7 +118,7 @@ async def test_india_location_safety_net_allows_india() -> None:
 @pytest.mark.asyncio
 async def test_latest_returns_persisted_internships() -> None:
     collection = FakeCollection()
-    service = InternshipService(collection)
+    service = InternshipService(collection)  # type: ignore
     await service.insert_if_new(build_internship())
 
     latest = await service.latest()

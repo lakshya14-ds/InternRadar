@@ -49,7 +49,7 @@ class ManualSourceConnector(BaseConnector):
         started_at = time.perf_counter()
 
         try:
-            response = await asyncio.wait_for(client.get(source["url"]), timeout=3.0)
+            response = await asyncio.wait_for(client.get(source["url"]), timeout=15.0)
             response.raise_for_status()
 
             def parse_html(html_text: str, sel: str, base_url: str) -> list[dict[str, Any]]:
@@ -110,7 +110,7 @@ class ManualSourceConnector(BaseConnector):
         if not companies:
             return []
 
-        timeout = httpx.Timeout(3.0)
+        timeout = httpx.Timeout(15.0)
 
         limits = httpx.Limits(
             max_keepalive_connections=50,

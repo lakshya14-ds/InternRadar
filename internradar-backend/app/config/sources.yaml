@@ -12,33 +12,33 @@ sources:
 
   # ── Dedicated Indian internship platforms ──────────────────────────────────
 
-  - name: Internshala
-    type: internshala
-    url: https://internshala.com/internships/
-    selector: "a.job-title-href"
-    location: India
-    refresh_interval: 30
-
-  - name: Internshala Engineering
-    type: internshala
-    url: https://internshala.com/internships/engineering-internship/
-    selector: "a.job-title-href"
-    location: India
-    refresh_interval: 30
-
-  - name: Internshala Computer Science
-    type: internshala
-    url: https://internshala.com/internships/computer-science-internship/
-    selector: "a.job-title-href"
-    location: India
-    refresh_interval: 30
-
-  - name: Internshala Data Science
-    type: internshala
-    url: https://internshala.com/internships/data-science-internship/
-    selector: "a.job-title-href"
-    location: India
-    refresh_interval: 30
+#   - name: Internshala
+#     type: internshala
+#     url: https://internshala.com/internships/
+#     selector: "a.job-title-href"
+#     location: India
+#     refresh_interval: 30
+# 
+#   - name: Internshala Engineering
+#     type: internshala
+#     url: https://internshala.com/internships/engineering-internship/
+#     selector: "a.job-title-href"
+#     location: India
+#     refresh_interval: 30
+# 
+#   - name: Internshala Computer Science
+#     type: internshala
+#     url: https://internshala.com/internships/computer-science-internship/
+#     selector: "a.job-title-href"
+#     location: India
+#     refresh_interval: 30
+# 
+#   - name: Internshala Data Science
+#     type: internshala
+#     url: https://internshala.com/internships/data-science-internship/
+#     selector: "a.job-title-href"
+#     location: India
+#     refresh_interval: 30
 
   - name: LetsIntern
     type: letsintern

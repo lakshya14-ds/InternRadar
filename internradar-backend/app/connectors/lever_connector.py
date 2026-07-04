@@ -18,7 +18,6 @@ LEVER_COMPANY_SLUGS: list[str] = [
     "swiggy",            # Bangalore
     "zomato",            # Gurugram
     "ola",               # Bangalore
-    "phonepe",           # Bangalore
     "paytm",             # Noida
     "nykaa",             # Mumbai
     "mamaearth",         # Gurugram
@@ -49,6 +48,10 @@ LEVER_COMPANY_SLUGS: list[str] = [
     "pure-ev",           # Hyderabad
     "ather-energy",      # Bangalore
     "revolt-motors",     # Gurugram
+    "cred",              # Bangalore
+    "dreamsports",       # Mumbai
+    "meesho",            # Bangalore
+    "porter",            # Mumbai
     # ── Global companies with India presence ────────────────────────────────
     "netlify",
     "scaleai",
@@ -83,7 +86,7 @@ class LeverConnector(BaseConnector):
                         f"https://api.lever.co/v0/postings/{slug}",
                         params={"mode": "json"},
                     ),
-                    timeout=3.0
+                    timeout=15.0
                 )
                 response.raise_for_status()
             except (httpx.HTTPError, asyncio.TimeoutError) as exc:
@@ -95,7 +98,7 @@ class LeverConnector(BaseConnector):
                 job["company_name"] = company["name"]
             return jobs
 
-        timeout = httpx.Timeout(3.0)
+        timeout = httpx.Timeout(15.0)
         limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
         async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
             results = await asyncio.gather(
@@ -105,7 +108,7 @@ class LeverConnector(BaseConnector):
 
         jobs: list[dict[str, Any]] = []
         for result in results:
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.debug("Lever company fetch failed: %s", result)
                 continue
             jobs.extend(result)

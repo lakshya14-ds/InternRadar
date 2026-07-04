@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 # that hire interns for their India offices.
 GREENHOUSE_BOARD_TOKENS: list[str] = [
     # ── Indian-origin companies ─────────────────────────────────────────────
-    "razorpay",          # Bangalore
+    "razorpaysoftwareprivatelimited", # Bangalore
+    "phonepe",           # Bangalore
     "zepto",             # Mumbai / Bangalore
     "meesho",            # Bangalore
     "mpl",               # Mobile Premier League — Bangalore
@@ -64,6 +65,11 @@ GREENHOUSE_BOARD_TOKENS: list[str] = [
     "amazon",
     "oracle",
     "sap",
+    "airtable",
+    "figma",
+    "netlify",
+    "scaleai",
+    "vercel",
 ]
 
 
@@ -91,7 +97,7 @@ class GreenhouseConnector(BaseConnector):
                         f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs",
                         params={"content": "true"},
                     ),
-                    timeout=3.0
+                    timeout=15.0
                 )
                 response.raise_for_status()
             except (httpx.HTTPError, asyncio.TimeoutError) as exc:
@@ -104,7 +110,7 @@ class GreenhouseConnector(BaseConnector):
                 job["board_token"] = token
             return fetched_jobs
 
-        timeout = httpx.Timeout(3.0)
+        timeout = httpx.Timeout(15.0)
         limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
         async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
             results = await asyncio.gather(
@@ -114,7 +120,7 @@ class GreenhouseConnector(BaseConnector):
 
         jobs: list[dict[str, Any]] = []
         for result in results:
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.debug("Greenhouse board fetch failed: %s", result)
                 continue
             jobs.extend(result)

@@ -11,8 +11,8 @@ from app.utils.deduplication import (
 
 
 def test_generate_fingerprint_is_stable_and_case_insensitive() -> None:
-    first = generate_fingerprint("Google", "Data Analyst Intern", "Bangalore")
-    second = generate_fingerprint(" google ", "data analyst intern", "bangalore")
+    first = generate_fingerprint("Google", "Data Analyst Intern", "Bangalore", "https://example.com/job")
+    second = generate_fingerprint(" google ", "data analyst intern", "bangalore", "https://example.com/job")
     assert first == second
     assert len(first) == 64
 
@@ -27,7 +27,7 @@ def test_fingerprint_for_internship_uses_core_identity_fields() -> None:
         url="https://example.com/job",
         description="One description",
     )
-    expected = generate_fingerprint("Google", "Software Engineering Intern", "Bangalore, India", "google")
+    expected = generate_fingerprint("Google", "Software Engineering Intern", "Bangalore, India", "https://example.com/job")
     assert fingerprint_for_internship(internship) == expected
 
 
@@ -41,9 +41,9 @@ class FakeCollection:
 
 @pytest.mark.asyncio
 async def test_internship_exists_true() -> None:
-    assert await internship_exists(FakeCollection(True), "fingerprint") is True
+    assert await internship_exists(FakeCollection(True), "fingerprint") is True  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_internship_exists_false() -> None:
-    assert await internship_exists(FakeCollection(False), "fingerprint") is False
+    assert await internship_exists(FakeCollection(False), "fingerprint") is False  # type: ignore

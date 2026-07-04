@@ -35,13 +35,19 @@ SMARTRECRUITERS_COMPANY_SLUGS: list[str] = [
     "Nazara-Technologies",       # Mumbai
     "Newgen-Software",           # Delhi
     "Minda-Industries",          # Gurugram
+    "freshworks",                # Chennai / Bangalore
+    "ixigo",                     # Gurugram
+    "nobroker",                  # Bangalore
+    "unacademy",                 # Bangalore
+    "interviewbit",              # Bangalore
     # ── Global companies with India engineering centres ──────────────────────
     "Siemens",
-    "Bosch",
+    "boschgroup",
     "Schneider-Electric",
     "Honeywell",
     "3M",
     "Philips",
+    "uber",
 ]
 
 
@@ -67,7 +73,7 @@ class SmartRecruitersConnector(BaseConnector):
                     client.get(
                         f"https://api.smartrecruiters.com/v1/companies/{company['slug']}/postings",
                     ),
-                    timeout=3.0
+                    timeout=15.0
                 )
                 response.raise_for_status()
             except (httpx.HTTPError, asyncio.TimeoutError) as exc:
@@ -80,7 +86,7 @@ class SmartRecruitersConnector(BaseConnector):
                 job["company_slug"] = company["slug"]
             return jobs
 
-        timeout = httpx.Timeout(3.0)
+        timeout = httpx.Timeout(15.0)
         limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
         async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
             results = await asyncio.gather(
@@ -90,7 +96,7 @@ class SmartRecruitersConnector(BaseConnector):
 
         jobs: list[dict[str, Any]] = []
         for result in results:
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.debug("SmartRecruiters company fetch failed: %s", result)
                 continue
             jobs.extend(result)

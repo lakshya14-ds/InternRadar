@@ -2,12 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, MapPin, ExternalLink, Bookmark, BookmarkCheck, Calendar, Building2, Tag, Globe, CheckCircle2, ChevronRight, Share2 } from "lucide-react";
+import { ArrowLeft, MapPin, ExternalLink, Bookmark, BookmarkCheck, Calendar, Building2, Tag, Globe, CheckCircle2, ChevronRight, Share2, DollarSign, Hourglass, Award, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { internshipsApi, usersApi } from "@/lib/api";
+import { internshipsApi, usersApi, companiesApi } from "@/lib/api";
 import { cn, timeAgo, sourceLabel, categoryColor, getInternshipId } from "@/lib/utils";
 import { useAppStore } from "@/store/useStore";
 import { InternshipCard } from "@/components/internships/InternshipCard";
@@ -39,10 +39,16 @@ export default function InternshipDetailPage() {
     enabled: !!id,
   });
 
+  const { data: enrichedCompany } = useQuery({
+    queryKey: ["company-enrich", internship?.company],
+    queryFn: () => companiesApi.enrich(internship!.company),
+    enabled: !!internship?.company,
+  });
+
   const { data: related } = useQuery({
-    queryKey: ["internships", "search", { category: internship?.category }],
-    queryFn: () => internshipsApi.search({ category: internship?.category || "", limit: 6 }),
-    enabled: !!internship?.category,
+    queryKey: ["internships", "recommendations", id],
+    queryFn: () => internshipsApi.getRecommendations(id),
+    enabled: !!id,
   });
 
   const saved = isBookmarked(id);
@@ -138,9 +144,19 @@ export default function InternshipDetailPage() {
             
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600/20 to-amber-600/20 border border-orange-500/20 flex items-center justify-center text-2xl font-extrabold text-orange-400 shrink-0">
-                  {internship.company[0]?.toUpperCase()}
-                </div>
+                {enrichedCompany?.logo ? (
+                  <div className="w-16 h-16 rounded-2xl bg-white border border-white/10 flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
+                    <img
+                      src={enrichedCompany.logo}
+                      alt={`${internship.company} Logo`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-600/20 to-amber-600/20 border border-orange-500/20 flex items-center justify-center text-2xl font-extrabold text-orange-400 shrink-0">
+                    {internship.company[0]?.toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <h1 className="text-xl md:text-2xl font-extrabold tracking-tight text-white mb-1 leading-snug">
                     {internship.title}
@@ -184,6 +200,52 @@ export default function InternshipDetailPage() {
               Description is not directly available. Click "Apply Now" to view full details on {internship.company}&apos;s careers site.
             </div>
           )}
+
+          {/* Company Enrichment Card */}
+          {enrichedCompany && (
+            <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 md:p-8 glass space-y-6">
+              <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+                {enrichedCompany.logo && (
+                  <div className="w-12 h-12 rounded-xl bg-white border border-white/10 flex items-center justify-center p-1 overflow-hidden shrink-0">
+                    <img
+                      src={enrichedCompany.logo}
+                      alt={`${internship.company} Logo`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                <div>
+                  <h3 className="font-bold text-sm text-white">{internship.company}</h3>
+                  <div className="flex flex-wrap gap-x-3 text-[10px] text-muted-foreground mt-0.5">
+                    {enrichedCompany.industry && <span>{enrichedCompany.industry}</span>}
+                    {enrichedCompany.company_size && (
+                      <>
+                        <span className="text-white/20">•</span>
+                        <span>{enrichedCompany.company_size}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {enrichedCompany.description && (
+                <p className="text-muted-foreground text-xs leading-relaxed font-sans">
+                  {enrichedCompany.description}
+                </p>
+              )}
+
+              {enrichedCompany.website && (
+                <a
+                  href={enrichedCompany.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300 font-semibold transition-colors"
+                >
+                  Visit Corporate Website <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: Sticky summary card */}
@@ -196,8 +258,12 @@ export default function InternshipDetailPage() {
 
               <div className="space-y-4 mb-6">
                 {[
-                  { icon: MapPin, label: "Workplace Type", value: internship.remote ? "Remote Possible" : "In-office / Onsite" },
+                  { icon: MapPin, label: "Workplace Type", value: internship.work_type || (internship.remote ? "Remote Possible" : "In-office / Onsite") },
                   { icon: Globe, label: "Primary Location", value: internship.location || "Multiple Locations" },
+                  { icon: DollarSign, label: "Stipend / Salary", value: internship.stipend || internship.salary || "Not Specified" },
+                  { icon: Hourglass, label: "Duration", value: internship.duration || "Not Specified" },
+                  { icon: Award, label: "Experience Level", value: internship.experience_level || "Not Specified" },
+                  { icon: ShieldAlert, label: "Deadline", value: internship.application_deadline || "Open / Rolling" },
                   { icon: Calendar, label: "Published Date", value: timeAgo(internship.posted_at || internship.scraped_at) },
                   { icon: Building2, label: "Tracked Portal", value: sourceLabel(internship.source) },
                 ].map((item, idx) => (
@@ -212,6 +278,19 @@ export default function InternshipDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {internship.benefits && internship.benefits.length > 0 && (
+                <div className="mb-6 border-t border-white/5 pt-4">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold mb-3">Benefits & Perks</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {internship.benefits.map((benefit) => (
+                      <span key={benefit} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+                        {benefit}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {internship.skills && internship.skills.length > 0 && (
                 <div className="mb-6 border-t border-white/5 pt-4">

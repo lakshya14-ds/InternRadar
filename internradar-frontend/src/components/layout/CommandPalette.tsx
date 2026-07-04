@@ -40,7 +40,7 @@ export function CommandPalette() {
       setLoading(true);
       try {
         const data = await internshipsApi.search({ title: query, limit: 5 });
-        setResults(data || []);
+        setResults(data.results || []);
         setSelectedIndex(0);
       } catch (err) {
         console.error(err);

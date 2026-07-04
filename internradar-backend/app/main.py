@@ -1,5 +1,14 @@
 """FastAPI application entry point."""
 
+import sys
+import asyncio
+
+if sys.platform == "win32":
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
+
 from collections.abc import AsyncIterator
 import logging
 from contextlib import asynccontextmanager

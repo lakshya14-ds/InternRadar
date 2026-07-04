@@ -14,18 +14,11 @@ logger = logging.getLogger(__name__)
 # ── Phase 1: title must contain at least one of these ────────────────────────
 # Checked on TITLE ONLY — description is too noisy ("we are hiring for an
 # intern-facing product" would match otherwise).
-INTERNSHIP_TITLE_KEYWORDS = (
-    "intern",
-    "internship",
-    "trainee",
-    "apprentice",
-    "graduate trainee",
-    "industrial trainee",
-    "summer trainee",
-    "winter trainee",
-    "project trainee",
-    "student trainee",
+INTERNSHIP_TITLE_PATTERN = re.compile(
+    r"\b(interns?|internships?|trainees?|apprentices?|graduate trainee|industrial trainee|summer trainee|winter trainee|project trainee|student trainee|student program|summer intern|co-op|coop|university program|campus hiring internship)\b",
+    re.IGNORECASE,
 )
+
 
 # ── Phase 2: title must NOT contain any of these ─────────────────────────────
 NON_INTERNSHIP_TITLE_KEYWORDS = (
@@ -173,7 +166,7 @@ class BaseConnector(ABC):
     def normalize(self, raw_jobs: list[dict[str, Any]]) -> list[InternshipCreate]:
         """Normalize raw jobs into the shared internship model."""
 
-    def is_internship(self, title: str, description: str = "") -> bool:
+    def is_internship(self, title: str, description: str = "", check_title: bool = True) -> bool:
         """Three-phase internship gate — all three must pass.
 
         Phase 1 — Title inclusion:
@@ -202,7 +195,7 @@ class BaseConnector(ABC):
         desc_lower = description.casefold()
 
         # ── Phase 1: title must look like an internship ───────────────────────
-        if not any(kw in title_lower for kw in INTERNSHIP_TITLE_KEYWORDS):
+        if check_title and not INTERNSHIP_TITLE_PATTERN.search(title_lower):
             logger.debug("Phase1 fail (no internship keyword in title): %s", title)
             return False
 
@@ -247,21 +240,49 @@ class BaseConnector(ABC):
         employment_type: str = "Internship",
         skills: list[str] | None = None,
         tags: list[str] | None = None,
+        stipend: str | None = None,
+        salary: str | None = None,
+        stipend_numeric: float | None = None,
+        duration: str | None = None,
+        company_logo: str | None = None,
+        industry: str | None = None,
+        experience_level: str | None = None,
+        application_deadline: str | None = None,
+        benefits: list[str] | None = None,
+        work_type: str | None = None,
+        company_size: str | None = None,
     ) -> InternshipCreate:
         """Build a normalized internship record."""
 
         clean_location = location.strip() or "Not specified"
+        # Determine if remote based on location or work_type
+        is_remote = False
+        if "remote" in clean_location.lower() or (work_type and "remote" in work_type.lower()):
+            is_remote = True
+
         return InternshipCreate(
             external_id=external_id.strip(),
             source=self.source,
             company=company.strip(),
             title=title.strip(),
             location=clean_location,
-            remote=False,
+            remote=is_remote,
             employment_type=employment_type,
             url=url.strip(),
             description=description.strip(),
             posted_at=posted_at or datetime.now(UTC),
             skills=skills or [],
             tags=tags or [],
+            stipend=stipend,
+            salary=salary,
+            stipend_numeric=stipend_numeric,
+            duration=duration,
+            company_logo=company_logo,
+            industry=industry,
+            experience_level=experience_level,
+            application_deadline=application_deadline,
+            benefits=benefits or [],
+            work_type=work_type or ("Remote" if is_remote else "Onsite"),
+            company_size=company_size,
         )
+

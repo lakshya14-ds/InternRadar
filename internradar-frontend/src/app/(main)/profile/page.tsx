@@ -31,6 +31,19 @@ export default function ProfilePage() {
     enabled: !!session?.accessToken,
   });
 
+  const { data: savedSearches, isLoading: savedSearchesLoading } = useQuery({
+    queryKey: ["saved-searches", session?.accessToken],
+    queryFn: () => usersApi.listSavedSearches(session!.accessToken!),
+    enabled: !!session?.accessToken,
+  });
+
+  const deleteSavedSearchMutation = useMutation({
+    mutationFn: (searchId: string) => usersApi.deleteSavedSearch(session!.accessToken!, searchId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["saved-searches"] });
+    },
+  });
+
   useEffect(() => {
     if (profile) {
       setName(profile.name);
@@ -284,6 +297,55 @@ export default function ProfilePage() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Saved Searches & Alerts Card */}
+          <div className="rounded-2xl border border-white/5 bg-[#18181b]/40 p-6 glass space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest flex items-center gap-2 mb-1">
+                <Settings2 className="w-4 h-4 text-orange-400" /> Saved Searches & Alerts
+              </h3>
+              <p className="text-[11px] text-muted-foreground">Manage your custom saved queries and email alert frequencies (instant, daily, weekly)</p>
+            </div>
+
+            {savedSearchesLoading ? (
+              <div className="space-y-2 animate-pulse">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-14 bg-white/5 border border-white/5 rounded-xl" />
+                ))}
+              </div>
+            ) : savedSearches?.length ? (
+              <div className="space-y-3">
+                {savedSearches.map((search: any) => (
+                  <div key={search._id} className="flex items-center justify-between p-4 bg-[#09090b]/40 border border-white/5 rounded-xl gap-4">
+                    <div className="space-y-1 min-w-0">
+                      <span className="text-xs font-bold text-white block truncate">{search.name}</span>
+                      <div className="flex flex-wrap items-center gap-x-2 text-[10px] text-muted-foreground">
+                        <span className="capitalize bg-orange-500/10 text-orange-400 border border-orange-500/10 px-1.5 py-0.2 rounded font-semibold">
+                          {search.frequency}
+                        </span>
+                        <span className="truncate">
+                          Params: {Object.entries(search.query_params || {})
+                            .map(([k, v]) => `${k}=${v}`)
+                            .join(", ") || "None"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteSavedSearchMutation.mutate(search._id)}
+                      disabled={deleteSavedSearchMutation.isPending}
+                      className="text-[10px] font-bold text-red-400 hover:text-red-300 px-2.5 py-1.5 rounded-lg border border-red-500/10 hover:bg-red-500/10 transition-all shrink-0"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground text-xs bg-[#09090b]/20 rounded-xl border border-white/5">
+                No saved searches found. You can save search filters from the search page.
+              </div>
+            )}
           </div>
 
           {/* Sticky Save Changes Control */}

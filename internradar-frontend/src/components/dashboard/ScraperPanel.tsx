@@ -17,6 +17,9 @@ interface ConnectorResult {
   inserted: number;
   status: "done" | "error";
   error?: string;
+  runtime_seconds?: number;
+  speed?: number;
+  circuit_breaker_state?: string;
 }
 
 interface ScraperStatus {
@@ -27,9 +30,26 @@ interface ScraperStatus {
   current_connector: string | null;
   progress: ConnectorResult[];
   error: string | null;
+  total_speed?: number | null;
+  success_rate?: number | null;
+  eta_seconds?: number | null;
 }
 
-const CONNECTOR_ORDER = ["Greenhouse", "Lever", "Ashby", "Workday", "SmartRecruiters", "ManualSource"];
+const CONNECTOR_ORDER = [
+  "Greenhouse",
+  "Lever",
+  "Ashby",
+  "Workday",
+  "SmartRecruiters",
+  "ManualSource",
+  "Internshala",
+  "JSearch",
+  "YC",
+  "Simplify",
+  "Wellfound",
+  "RippleMatch",
+  "Handshake"
+];
 
 async function fetchStatus(): Promise<ScraperStatus> {
   const r = await axios.get<ScraperStatus>("/backend/api/scraper/status");
@@ -47,6 +67,7 @@ function ConnectorCard({ name, result, isCurrent }: {
 }) {
   const getBadgeStyle = () => {
     if (isCurrent) return "bg-orange-500/10 border-orange-500/30 text-orange-300";
+    if (result?.circuit_breaker_state === "open") return "bg-red-500/10 border-red-500/20 text-red-400";
     if (result?.status === "done") return "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
     if (result?.status === "error") return "bg-red-500/10 border-red-500/20 text-red-400";
     return "bg-white/5 border-white/5 text-muted-foreground";
@@ -54,6 +75,7 @@ function ConnectorCard({ name, result, isCurrent }: {
 
   const getBadgeText = () => {
     if (isCurrent) return "Scanning";
+    if (result?.circuit_breaker_state === "open") return "Tripped";
     if (result?.status === "done") return "Idle";
     if (result?.status === "error") return "Failed";
     return "Ready";
@@ -103,6 +125,16 @@ function ConnectorCard({ name, result, isCurrent }: {
                 <span className="text-emerald-400 font-semibold">+{result.inserted}</span>
               )}
             </div>
+            {result.speed !== undefined && result.speed !== null && result.speed > 0 && (
+              <span className="text-[9px] text-amber-400/80 block mt-0.5 font-medium">
+                Speed: {result.speed} j/s
+              </span>
+            )}
+            {result.runtime_seconds !== undefined && result.runtime_seconds !== null && (
+              <span className="text-[9px] text-muted-foreground block">
+                Time: {result.runtime_seconds}s
+              </span>
+            )}
           </div>
         ) : isCurrent ? (
           <div className="space-y-0.5">
@@ -111,11 +143,18 @@ function ConnectorCard({ name, result, isCurrent }: {
               <Loader2 className="w-2.5 h-2.5 animate-spin text-orange-400 shrink-0" /> API Query
             </span>
           </div>
+        ) : result?.circuit_breaker_state === "open" ? (
+          <div className="space-y-0.5">
+            <span className="text-[9px] font-semibold text-red-400/80 block uppercase tracking-wider">Circuit Breaker</span>
+            <span className="text-[10px] font-bold text-red-400/90 flex items-center gap-1">
+              Tripped
+            </span>
+          </div>
         ) : (
           <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">No Activity</span>
         )}
 
-        {result?.status === "done" && (
+        {result?.status === "done" && result.circuit_breaker_state !== "open" && (
           <div className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
             <Check className="w-2.5 h-2.5" />
           </div>
@@ -250,7 +289,7 @@ export function ScraperPanel() {
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
               )}
             </h2>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 font-medium">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 font-medium flex-wrap">
               {lastRun && !isRunning && (
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-orange-400/70" /> Last scan run {lastRun}
@@ -259,6 +298,11 @@ export function ScraperPanel() {
               {isRunning && status?.current_connector && (
                 <span className="text-orange-300/80 animate-pulse font-semibold">
                   Scan: {status.current_connector}
+                </span>
+              )}
+              {isRunning && status?.eta_seconds !== undefined && status?.eta_seconds !== null && (
+                <span className="text-amber-300 font-semibold flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-300" /> ETA: ~{status.eta_seconds}s
                 </span>
               )}
             </div>
@@ -318,7 +362,7 @@ export function ScraperPanel() {
             className="overflow-hidden border-t border-white/5"
           >
             <div className="px-6 py-5 space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {CONNECTOR_ORDER.map((name) => {
                   const shortName = name === "ManualSource" ? "ManualSource" : name;
                   const result = progressMap.get(shortName);
@@ -340,11 +384,25 @@ export function ScraperPanel() {
 
               {/* Run Metrics Summary footer */}
               {!isRunning && status?.progress?.length && (
-                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground gap-2 font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <Database className="w-4 h-4 text-orange-400/80" />
-                    Processed {status.last_fetched} opportunities during last session
-                  </span>
+                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground gap-4 font-medium">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <span className="flex items-center gap-1.5">
+                      <Database className="w-4 h-4 text-orange-400/80" />
+                      Processed {status.last_fetched} opportunities during last session
+                    </span>
+                    {status.total_speed !== undefined && status.total_speed !== null && status.total_speed > 0 && (
+                      <span className="flex items-center gap-1.5">
+                        <Zap className="w-4 h-4 text-amber-400" />
+                        Throughput: {status.total_speed} jobs/sec
+                      </span>
+                    )}
+                    {status.success_rate !== undefined && status.success_rate !== null && (
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        Success Rate: {Math.round(status.success_rate * 100)}%
+                      </span>
+                    )}
+                  </div>
                   <span className={cn("px-2.5 py-0.5 rounded-full", totalNew > 0 ? "bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20" : "")}>
                     {totalNew > 0 ? `+${totalNew} new openings indexed successfully` : "All monitored opportunities already up-to-date"}
                   </span>

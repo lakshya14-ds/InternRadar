@@ -19,6 +19,10 @@ class FakeCursor:
         self.documents = self.documents[:count]
         return self
 
+    def skip(self, count: int) -> "FakeCursor":
+        self.documents = self.documents[count:]
+        return self
+
     def __aiter__(self) -> AsyncIterator[dict[str, Any]]:
         async def iterator() -> AsyncIterator[dict[str, Any]]:
             for document in self.documents:
@@ -30,7 +34,7 @@ class FakeCollection:
     def __init__(self) -> None:
         self.query: dict[str, Any] | None = None
 
-    def find(self, query: dict[str, Any]) -> FakeCursor:
+    def find(self, query: dict[str, Any], projection: dict[str, Any] | None = None) -> FakeCursor:
         self.query = query
         return FakeCursor([
             {
@@ -51,13 +55,17 @@ class FakeCollection:
             }
         ])
 
+    async def count_documents(self, query: dict[str, Any]) -> int:
+        return 1
+
 
 @pytest.mark.asyncio
 async def test_search_builds_filters() -> None:
     collection = FakeCollection()
-    results = await SearchService(collection).search(company="Swiggy", remote=False)
+    results, total = await SearchService(collection).search(company="Swiggy", remote=False)  # type: ignore
 
     assert len(results) == 1
+    assert total == 1
     assert collection.query == {
         "company": {"$regex": "Swiggy", "$options": "i"},
         "remote": False,
@@ -67,7 +75,7 @@ async def test_search_builds_filters() -> None:
 @pytest.mark.asyncio
 async def test_search_with_location_filter() -> None:
     collection = FakeCollection()
-    await SearchService(collection).search(location="Bangalore")
+    await SearchService(collection).search(location="Bangalore")  # type: ignore
 
     assert collection.query == {"location": {"$regex": "Bangalore", "$options": "i"}}
 
@@ -75,7 +83,8 @@ async def test_search_with_location_filter() -> None:
 @pytest.mark.asyncio
 async def test_search_with_no_filters() -> None:
     collection = FakeCollection()
-    results = await SearchService(collection).search()
+    results, total = await SearchService(collection).search()  # type: ignore
 
     assert len(results) == 1
+    assert total == 1
     assert collection.query == {}

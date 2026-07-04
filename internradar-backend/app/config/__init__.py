@@ -12,10 +12,14 @@ class Settings(BaseSettings):
     mongo_uri: str = Field(..., alias="MONGO_URI")
     db_name: str = Field("internradar", alias="DB_NAME")
     jwt_secret: str = "super-secret-key"
-    jwt_expire_days: int = 7
+    jwt_expire_days: int = 30
     bot_token: str | None = Field(None, alias="BOT_TOKEN")
     chat_id: str | None = Field(None, alias="CHAT_ID")
     scraper_interval_minutes: int = Field(30, alias="SCRAPER_INTERVAL_MINUTES")
+    redis_host: str = Field("localhost", alias="REDIS_HOST")
+    redis_port: int = Field(6379, alias="REDIS_PORT")
+    redis_password: str | None = Field(None, alias="REDIS_PASSWORD")
+    redis_db: int = Field(0, alias="REDIS_DB")
     smtp_host: str | None = Field(None, alias="SMTP_HOST")
     smtp_port: int = Field(587, alias="SMTP_PORT")
     smtp_username: str | None = Field(None, alias="SMTP_USERNAME")
@@ -27,6 +31,7 @@ class Settings(BaseSettings):
     twilio_auth_token: str | None = Field(None, alias="TWILIO_AUTH_TOKEN")
     twilio_whatsapp_from: str | None = Field(None, alias="TWILIO_WHATSAPP_FROM")
     twilio_whatsapp_to: str | None = Field(None, alias="TWILIO_WHATSAPP_TO")
+    rapidapi_key: str | None = Field(None, alias="RAPIDAPI_KEY")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -40,4 +45,5 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return cached application settings."""
 
-    return Settings()
+    return Settings()  # type: ignore
+

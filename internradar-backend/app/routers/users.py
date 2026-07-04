@@ -114,3 +114,61 @@ async def bookmark_ids(
 ) -> list[str]:
     cursor = bookmark_col.find({"user_id": user_id}, {"internship_id": 1})
     return [doc["internship_id"] async for doc in cursor]
+
+
+@router.get("/me/recommendations", response_model=list[InternshipInDB])
+async def get_user_recommendations(
+    user_id: str = Depends(current_user_id),
+) -> list[InternshipInDB]:
+    from app.services.recommendation_service import RecommendationService
+    assert mongo.db is not None
+    return await RecommendationService(mongo.db).get_recommendations(user_id)
+
+
+from typing import Any
+from pydantic import BaseModel
+
+class SaveSearchRequest(BaseModel):
+    name: str
+    query_params: dict[str, Any]
+    frequency: str = "daily"
+
+@router.get("/me/saved-searches")
+async def list_saved_searches(
+    user_id: str = Depends(current_user_id),
+) -> list[dict]:
+    from app.services.saved_search_service import SavedSearchService
+    from app.config import get_settings
+    assert mongo.db is not None
+    return await SavedSearchService(mongo.db, get_settings()).list_saved_searches(user_id)
+
+@router.post("/me/saved-searches", status_code=201)
+async def create_saved_search(
+    data: SaveSearchRequest,
+    user_id: str = Depends(current_user_id),
+) -> dict:
+    from app.services.saved_search_service import SavedSearchService
+    from app.config import get_settings
+    assert mongo.db is not None
+    result = await SavedSearchService(mongo.db, get_settings()).save_search(
+        user_id=user_id,
+        name=data.name,
+        query_params=data.query_params,
+        frequency=data.frequency,
+    )
+    return {"success": True, "saved_search": result}
+
+@router.delete("/me/saved-searches/{search_id}")
+async def delete_saved_search(
+    search_id: str,
+    user_id: str = Depends(current_user_id),
+) -> dict:
+    from app.services.saved_search_service import SavedSearchService
+    from app.config import get_settings
+    assert mongo.db is not None
+    success = await SavedSearchService(mongo.db, get_settings()).delete_saved_search(user_id, search_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Saved search not found")
+    return {"success": True}
+
+

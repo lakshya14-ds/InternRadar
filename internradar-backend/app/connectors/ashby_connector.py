@@ -61,6 +61,8 @@ ASHBY_ORGANIZATION_SLUGS: list[str] = [
     "retool",
     "vercel",
     "supabase",
+    "ramp",
+    "notion",
 ]
 
 
@@ -85,7 +87,7 @@ class AshbyConnector(BaseConnector):
             try:
                 response = await asyncio.wait_for(
                     client.get(f"https://api.ashbyhq.com/posting-api/job-board/{slug}"),
-                    timeout=3.0
+                    timeout=15.0
                 )
                 response.raise_for_status()
             except (httpx.HTTPError, asyncio.TimeoutError) as exc:
@@ -98,7 +100,7 @@ class AshbyConnector(BaseConnector):
                 job["organization_slug"] = slug
             return jobs
 
-        timeout = httpx.Timeout(3.0)
+        timeout = httpx.Timeout(15.0)
         limits = httpx.Limits(max_keepalive_connections=50, max_connections=150)
         async with httpx.AsyncClient(timeout=timeout, limits=limits, follow_redirects=True) as client:
             results = await asyncio.gather(
@@ -108,7 +110,7 @@ class AshbyConnector(BaseConnector):
 
         jobs: list[dict[str, Any]] = []
         for result in results:
-            if isinstance(result, Exception):
+            if isinstance(result, BaseException):
                 logger.debug("Ashby organization fetch failed: %s", result)
                 continue
             jobs.extend(result)

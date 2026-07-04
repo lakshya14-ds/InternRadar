@@ -24,7 +24,12 @@ def _render(template_name: str, context: dict) -> str:
 
 
 def send_email(settings: Settings, to: str, subject: str, html: str) -> bool:
-    if not all([settings.smtp_host, settings.smtp_username, settings.smtp_password, settings.email_from]):
+    if (
+        settings.smtp_host is None
+        or settings.smtp_username is None
+        or settings.smtp_password is None
+        or settings.email_from is None
+    ):
         logger.warning("SMTP not configured — skipping email to %s", to)
         return False
     try:

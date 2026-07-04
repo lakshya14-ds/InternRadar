@@ -82,8 +82,8 @@ class FakeCollection:
 @pytest.mark.asyncio
 async def test_scheduler_inserts_india_internships() -> None:
     collection = FakeCollection()
-    scheduler = InternshipScheduler(FakeSettings(), collection)
-    scheduler.connectors = [FakeIndiaConnector()]
+    scheduler = InternshipScheduler(FakeSettings(), collection)  # type: ignore
+    scheduler.connectors = [FakeIndiaConnector()]  # type: ignore
 
     await scheduler.run_once()
 
@@ -95,8 +95,8 @@ async def test_scheduler_inserts_india_internships() -> None:
 @pytest.mark.asyncio
 async def test_scheduler_blocks_non_india_internships() -> None:
     collection = FakeCollection()
-    scheduler = InternshipScheduler(FakeSettings(), collection)
-    scheduler.connectors = [FakeNonIndiaConnector()]
+    scheduler = InternshipScheduler(FakeSettings(), collection)  # type: ignore
+    scheduler.connectors = [FakeNonIndiaConnector()]  # type: ignore
 
     await scheduler.run_once()
 
@@ -108,8 +108,8 @@ async def test_scheduler_blocks_non_india_internships() -> None:
 async def test_scheduler_mixed_connectors() -> None:
     """Only the India internship should be persisted when both connectors run."""
     collection = FakeCollection()
-    scheduler = InternshipScheduler(FakeSettings(), collection)
-    scheduler.connectors = [FakeIndiaConnector(), FakeNonIndiaConnector()]
+    scheduler = InternshipScheduler(FakeSettings(), collection)  # type: ignore
+    scheduler.connectors = [FakeIndiaConnector(), FakeNonIndiaConnector()]  # type: ignore
 
     await scheduler.run_once()
 

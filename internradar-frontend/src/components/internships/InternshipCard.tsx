@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, MapPin, Bookmark, BookmarkCheck, Calendar, Sparkles } from "lucide-react";
+import { ExternalLink, MapPin, Bookmark, BookmarkCheck, Calendar, Sparkles, Building2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -41,19 +41,44 @@ export function InternshipCard({ internship, compact }: Props) {
     <motion.div
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="relative flex flex-col h-full rounded-2xl border border-white/5 bg-[#18181b]/40 p-5 glass hover:border-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 group overflow-hidden"
+      className="relative flex flex-col h-full rounded-2xl border border-white/5 bg-[#18181b]/30 p-5 glass hover:border-orange-500/30 hover:shadow-2xl hover:shadow-orange-500/10 transition-all duration-300 group overflow-hidden"
     >
       {/* Background glow highlights */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/3 rounded-full blur-3xl pointer-events-none group-hover:bg-orange-500/5 transition-all duration-300 -z-10" />
 
       <div className="flex items-start justify-between mb-4 gap-2">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-500/15 via-amber-500/10 to-yellow-500/5 border border-orange-500/20 flex items-center justify-center text-sm font-extrabold text-orange-300 group-hover:scale-105 transition-transform duration-200 shrink-0 shadow-inner">
-          {internship.company[0]?.toUpperCase() || "I"}
-        </div>
+        {internship.company_logo ? (
+          <div className="w-11 h-11 rounded-xl bg-white border border-white/10 flex items-center justify-center p-1 group-hover:scale-105 transition-transform duration-200 shrink-0 shadow-inner overflow-hidden">
+            <img
+              src={internship.company_logo}
+              alt={`${internship.company} Logo`}
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                const parent = (e.target as HTMLElement).parentElement;
+                if (parent) {
+                  parent.innerHTML = `<span class="text-sm font-extrabold text-orange-300">${internship.company[0]?.toUpperCase() || "I"}</span>`;
+                  parent.className = "w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-500/15 via-amber-500/10 to-yellow-500/5 border border-orange-500/20 flex items-center justify-center shrink-0 shadow-inner";
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-orange-500/15 via-amber-500/10 to-yellow-500/5 border border-orange-500/20 flex items-center justify-center text-sm font-extrabold text-orange-300 group-hover:scale-105 transition-transform duration-200 shrink-0 shadow-inner">
+            {internship.company[0]?.toUpperCase() || "I"}
+          </div>
+        )}
         <div className="flex items-center gap-1.5 shrink-0">
           {internship.remote && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tracking-wide uppercase">
               Remote
+            </span>
+          )}
+          {(internship.quality_score ?? 0) >= 70 && (
+            <span
+              title={`Quality score ${internship.quality_score}/100`}
+              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 tracking-wide uppercase flex items-center gap-0.5"
+            >
+              <Sparkles className="w-2.5 h-2.5" /> Top
             </span>
           )}
           {session && (
@@ -80,13 +105,35 @@ export function InternshipCard({ internship, compact }: Props) {
         </div>
       </div>
 
-      <Link href={`/internships/${id}`} className="flex-1 flex flex-col group">
-        <div className="font-bold text-sm text-white group-hover:text-orange-300 transition-colors duration-200 line-clamp-2 leading-snug mb-1">
-          {internship.title}
-        </div>
-        <div className="text-muted-foreground text-xs font-semibold hover:text-white transition-colors mb-4 flex items-center gap-1.5">
-          {internship.company}
-          {internship.remote && <span className="w-1 h-1 rounded-full bg-orange-500/50" />}
+      <div className="flex-1 flex flex-col">
+        {/* Company Link */}
+        <Link 
+          href={`/company/${encodeURIComponent(internship.company)}`} 
+          className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors mb-1 inline-flex items-center gap-1 w-max relative z-10"
+        >
+          <Building2 className="w-3 h-3 shrink-0" />
+          <span>{internship.company}</span>
+        </Link>
+        
+        {/* Role Title Link */}
+        <Link href={`/internships/${id}`} className="block group/title mb-2">
+          <div className="font-extrabold text-sm text-white group-hover/title:text-orange-300 transition-colors duration-200 line-clamp-2 leading-snug">
+            {internship.title}
+          </div>
+        </Link>
+
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4 text-[11px] font-semibold">
+          {(internship.stipend || internship.salary) && (
+            <span className="text-amber-400">
+              {internship.stipend || internship.salary}
+            </span>
+          )}
+          {internship.duration && (
+            <span className="text-muted-foreground flex items-center gap-1">
+              {(internship.stipend || internship.salary) && <span className="w-1 h-1 rounded-full bg-white/20" />}
+              {internship.duration}
+            </span>
+          )}
         </div>
 
         {!compact && (
@@ -101,9 +148,24 @@ export function InternshipCard({ internship, compact }: Props) {
                 {internship.category}
               </span>
             )}
+            {internship.funding_stage && (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 tracking-wide uppercase">
+                {internship.funding_stage}
+              </span>
+            )}
             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/5 text-muted-foreground border border-white/5 tracking-wide uppercase">
-              {sourceLabel(internship.source)}
+              Apply via {sourceLabel(internship.source)}
             </span>
+            {["greenhouse", "lever", "ashby", "workday", "smartrecruiters", "icims", "taleo", "successfactors", "jobvite", "bamboohr"].includes(internship.source.toLowerCase()) && (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/20 tracking-wide uppercase">
+                Official Career Site
+              </span>
+            )}
+            {["yc", "wellfound", "simplify", "ripplematch", "handshake", "huzzle"].includes(internship.source.toLowerCase()) && (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 tracking-wide uppercase">
+                Verified Source
+              </span>
+            )}
           </div>
         )}
 
@@ -117,9 +179,9 @@ export function InternshipCard({ internship, compact }: Props) {
             {timeAgo(internship.posted_at || internship.scraped_at)}
           </span>
         </div>
-      </Link>
+      </div>
 
-      <div className="mt-4 pt-4 border-t border-white/5">
+      <div className="mt-4 pt-4 border-t border-white/5 relative z-10">
         <a
           href={internship.url}
           target="_blank"

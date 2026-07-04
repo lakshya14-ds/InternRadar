@@ -2,16 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, Building2, Users, Zap, TrendingUp, ArrowRight, RefreshCw, Terminal, Globe, Calendar, ArrowUpRight } from "lucide-react";
+import { Briefcase, Building2, Users, Zap, TrendingUp, ArrowRight, RefreshCw, Terminal, Globe, Calendar, ArrowUpRight, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, CartesianGrid
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, CartesianGrid, PieChart, Pie, Legend
 } from "recharts";
-import { statsApi, internshipsApi } from "@/lib/api";
+import { statsApi, internshipsApi, usersApi } from "@/lib/api";
 import { InternshipCard } from "@/components/internships/InternshipCard";
 import { ScraperPanel } from "@/components/dashboard/ScraperPanel";
+import { cn } from "@/lib/utils";
 
 const HERO_KEYWORDS = [
   "Software Engineering",
@@ -66,6 +67,13 @@ const SIMULATED_LOGS = [
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [keywordIndex, setKeywordIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<"latest" | "foryou">("latest");
+
+  const { data: recommendations, isLoading: recommendationsLoading } = useQuery({
+    queryKey: ["recommendations", session?.accessToken],
+    queryFn: () => usersApi.recommendations(session!.accessToken!),
+    enabled: !!session?.accessToken,
+  });
 
   // Rotating Hero text effect
   useEffect(() => {
@@ -89,6 +97,19 @@ export default function DashboardPage() {
     name: c.category?.split(" ")[0] || "Other",
     count: c.count,
   })) || [];
+
+  const companyData = stats?.top_companies?.slice(0, 8).map((c) => ({
+    name: c.company.length > 10 ? c.company.slice(0, 8) + ".." : c.company,
+    count: c.count,
+  })) || [];
+
+  const locationData = stats?.top_locations?.slice(0, 8).map((l) => ({
+    name: l.location.split(",")[0] || "Remote",
+    count: l.count,
+  })) || [];
+
+  const startupMncData = stats?.startup_vs_mnc || [];
+  const remoteOnsiteData = stats?.remote_vs_onsite || [];
 
   return (
     <div className="space-y-8">
@@ -197,17 +218,16 @@ export default function DashboardPage() {
 
       {/* Visual Analytics & Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Category Area Chart */}
+        
+        {/* Category Distribution Area Chart */}
         <div className="lg:col-span-2 bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 glass relative">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm text-white">Internships by Category</h3>
-                <p className="text-[11px] text-muted-foreground">Distribution across top engineering fields</p>
-              </div>
+          <div className="flex items-center gap-2 mb-6">
+            <div className="p-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-white">Internships by Category</h3>
+              <p className="text-[11px] text-muted-foreground">Distribution across engineering fields</p>
             </div>
           </div>
           {categoryData.length > 0 ? (
@@ -220,8 +240,8 @@ export default function DashboardPage() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
                     background: "rgba(9, 9, 11, 0.95)",
@@ -239,7 +259,7 @@ export default function DashboardPage() {
           ) : (
             <div className="flex flex-col items-center justify-center h-[230px] text-muted-foreground">
               <RefreshCw className="w-8 h-8 mb-2 opacity-30 animate-spin" />
-              <p className="text-xs">Connecting to MongoDB database...</p>
+              <p className="text-xs">Gathering database stats...</p>
             </div>
           )}
         </div>
@@ -247,17 +267,17 @@ export default function DashboardPage() {
         {/* Source Tracker with Progress Bars */}
         <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 glass">
           <div className="flex items-center gap-2 mb-6">
-            <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400">
+            <div className="p-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400">
               <Globe className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-white">Source Breakdown</h3>
-              <p className="text-[11px] text-muted-foreground">Volume across ATS portals</p>
+              <h3 className="font-semibold text-sm text-white">Source Volume</h3>
+              <p className="text-[11px] text-muted-foreground">Distribution across aggregation sources</p>
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
             {stats?.sources?.length ? (
-              stats.sources.map((s, idx) => {
+              stats.sources.slice(0, 15).map((s, idx) => {
                 const percentage = Math.round((s.count / (stats.total_internships || 1)) * 100);
                 return (
                   <div key={s.source} className="space-y-1">
@@ -265,7 +285,7 @@ export default function DashboardPage() {
                       <span className="capitalize font-semibold text-gray-200">{s.source}</span>
                       <span className="text-muted-foreground font-mono">{s.count} ({percentage}%)</span>
                     </div>
-                    <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${percentage}%` }}
@@ -283,6 +303,153 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+      </div>
+
+      {/* Upgraded Analytics Charts: Companies, Locations, Distributions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Top Hiring Companies Barchart */}
+        <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 glass">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
+              <Building2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-white">Top Hiring Companies</h3>
+              <p className="text-[11px] text-muted-foreground">Companies with most active openings</p>
+            </div>
+          </div>
+          {companyData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={companyData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 8, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(9, 9, 11, 0.95)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                    fontSize: "10px",
+                    color: "#fff"
+                  }}
+                />
+                <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                  {companyData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center text-muted-foreground text-xs">
+              No company data available
+            </div>
+          )}
+        </div>
+
+        {/* Top Locations Barchart */}
+        <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 glass">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm text-white">Top Locations</h3>
+              <p className="text-[11px] text-muted-foreground">Hotspots for internship hiring</p>
+            </div>
+          </div>
+          {locationData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={locationData} margin={{ top: 5, right: 5, left: -25, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 8, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    background: "rgba(9, 9, 11, 0.95)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                    fontSize: "10px",
+                    color: "#fff"
+                  }}
+                />
+                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]}>
+                  {locationData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[(index + 2) % CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center text-muted-foreground text-xs">
+              No location data available
+            </div>
+          )}
+        </div>
+
+        {/* Distribution Donut Charts: Startup/MNC and Remote/Onsite */}
+        <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-6 glass flex flex-col justify-between">
+          <div>
+            <h3 className="font-semibold text-sm text-white mb-1">Hiring Distribution</h3>
+            <p className="text-[10px] text-muted-foreground mb-4">Firm type and work style breakouts</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2 flex-1 items-center">
+            {/* Company Type Donut (Startup / MNC / Enterprise) */}
+            <div className="flex flex-col items-center">
+              <ResponsiveContainer width="100%" height={90}>
+                <PieChart>
+                  <Pie
+                    data={startupMncData.length > 0 ? startupMncData : [{name: "Empty", value: 1}]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={22}
+                    outerRadius={35}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    <Cell fill="#f97316" />
+                    <Cell fill="#3b82f6" />
+                    <Cell fill="#a855f7" />
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value} roles`} />
+                </PieChart>
+              </ResponsiveContainer>
+              <span className="text-[9px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Firm Type</span>
+            </div>
+
+            {/* Remote vs Onsite Donut */}
+            <div className="flex flex-col items-center">
+              <ResponsiveContainer width="100%" height={90}>
+                <PieChart>
+                  <Pie
+                    data={remoteOnsiteData.length > 0 ? remoteOnsiteData : [{name: "Empty", value: 1}]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={22}
+                    outerRadius={35}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    <Cell fill="#10b981" />
+                    <Cell fill="#6b7280" />
+                  </Pie>
+                  <Tooltip formatter={(value) => `${value} roles`} />
+                </PieChart>
+              </ResponsiveContainer>
+              <span className="text-[9px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Work Type</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-4 text-[9px] text-muted-foreground mt-3 font-semibold flex-wrap">
+            <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Startups</div>
+            <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> MNCs</div>
+            <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500" /> Enterprise</div>
+          </div>
+        </div>
+
       </div>
 
       {/* Scraper Live Log Feed */}
@@ -316,39 +483,118 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Latest Internships Grid */}
+      {/* Internships Feed Section */}
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <div className="space-y-1">
-            <h2 className="font-bold text-sm text-white uppercase tracking-wider">Latest Curation</h2>
-            <p className="text-xs text-muted-foreground">Fresh internship matches indexed recently</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 border-b border-white/5 pb-4">
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setActiveTab("latest")}
+              className={cn(
+                "relative pb-2 text-sm font-bold uppercase tracking-wider transition-colors duration-200",
+                activeTab === "latest" ? "text-white" : "text-muted-foreground hover:text-white"
+              )}
+            >
+              Latest Curation
+              {activeTab === "latest" && (
+                <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("foryou")}
+              className={cn(
+                "relative pb-2 text-sm font-bold uppercase tracking-wider transition-colors duration-200 flex items-center gap-1.5",
+                activeTab === "foryou" ? "text-white" : "text-muted-foreground hover:text-white"
+              )}
+            >
+              <Zap className="w-3.5 h-3.5 text-orange-400" />
+              For You
+              {activeTab === "foryou" && (
+                <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500" />
+              )}
+            </button>
           </div>
+
           <Link
             href="/internships"
-            className="group flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300 font-semibold transition-colors"
+            className="group flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300 font-semibold transition-colors shrink-0"
           >
             View all listings <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>
 
-        {latest?.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {latest.map((internship, i) => (
-              <motion.div
-                key={internship._id || internship.external_id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: 0.05 * i }}
-              >
-                <InternshipCard internship={internship} />
-              </motion.div>
-            ))}
+        {activeTab === "latest" ? (
+          <div>
+            {latest?.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {latest.map((internship, i) => (
+                  <motion.div
+                    key={internship._id || internship.external_id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.05 * i }}
+                  >
+                    <InternshipCard internship={internship} />
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass">
+                <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-20 text-orange-400 animate-pulse" />
+                <p className="font-semibold text-sm mb-1 text-white">No internships found</p>
+                <p className="text-xs text-muted-foreground">The parser is syncing the catalog, please refresh the page.</p>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="text-center py-20 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass">
-            <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-20 text-orange-400 animate-pulse" />
-            <p className="font-semibold text-sm mb-1 text-white">No internships found</p>
-            <p className="text-xs text-muted-foreground">The parser is syncing the catalog, please refresh the page.</p>
+          <div>
+            {!session?.accessToken ? (
+              <div className="text-center py-16 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass max-w-xl mx-auto p-6">
+                <Users className="w-12 h-12 mx-auto mb-4 opacity-20 text-orange-400" />
+                <p className="font-semibold text-sm mb-2 text-white">Sign in to unlock personalized AI matches</p>
+                <p className="text-xs text-muted-foreground mb-6">
+                  We analyze your preferences, bookmarks, and skills to recommend the absolute best opportunities suited for your career profile.
+                </p>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white shadow-lg shadow-orange-500/20 transition-all duration-300"
+                >
+                  Sign In / Get Started
+                </Link>
+              </div>
+            ) : recommendationsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="bg-card/40 border border-white/5 rounded-2xl p-6 h-48 animate-pulse" />
+                ))}
+              </div>
+            ) : recommendations?.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {recommendations.map((internship, i) => (
+                  <motion.div
+                    key={internship._id || internship.external_id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: 0.05 * i }}
+                  >
+                    <InternshipCard internship={internship} />
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass p-6">
+                <Zap className="w-12 h-12 mx-auto mb-4 opacity-20 text-orange-400 animate-pulse" />
+                <p className="font-semibold text-sm mb-1 text-white">No personalized recommendations yet</p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Bookmark some jobs or customize your preferred categories & skills in your profile settings.
+                </p>
+                <Link
+                  href="/profile"
+                  className="inline-flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300 font-semibold"
+                >
+                  Update Profile Preferences <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </div>
