@@ -2,12 +2,30 @@
 
 import asyncio
 import logging
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 import httpx
 
 logger = logging.getLogger(__name__)
 
 _validation_semaphore = asyncio.Semaphore(10)
+
+
+def clean_url(url: str) -> str:
+    """Clean a URL by stripping only tracking/marketing query parameters."""
+    if not url:
+        return ""
+    try:
+        parsed = urlparse(url)
+        tracking_params = {
+            "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+            "fbclid", "gclid", "msclkid", "ref", "referrer", "spm", "origin"
+        }
+        qsl = parse_qsl(parsed.query)
+        filtered_qsl = [(k, v) for k, v in qsl if k.lower() not in tracking_params]
+        new_query = urlencode(filtered_qsl)
+        return urlunparse(parsed._replace(query=new_query, fragment=parsed.fragment))
+    except Exception:
+        return url
 
 
 async def validate_job_url(url: str) -> tuple[bool, str, str, str]:
@@ -95,8 +113,8 @@ async def validate_job_url(url: str) -> tuple[bool, str, str, str]:
                 logger.info("URL validation failed: Expired content on page for %s", url)
                 return False, original_url, canonical_url, final_url
 
-            # Determine a canonical clean URL (stripping query parameters)
-            canonical_url = f"{parsed_final.scheme}://{parsed_final.netloc}{parsed_final.path}"
+            # Determine a canonical clean URL (stripping only tracking parameters)
+            canonical_url = clean_url(final_url)
 
             return True, original_url, canonical_url, final_url
 

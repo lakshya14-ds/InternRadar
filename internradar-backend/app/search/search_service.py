@@ -45,7 +45,8 @@ def parse_hybrid_query(q: str) -> dict:
         "data scientist": "Data Science",
         "machine learning": "Machine Learning",
         "ml": "Machine Learning",
-        "ai": "Machine Learning",
+        "ai": "AI",
+        "artificial intelligence": "AI",
         "data analytics": "Data Analytics",
         "data analyst": "Data Analytics",
         "product manager": "Product",
@@ -216,7 +217,17 @@ class SearchService:
             blended.sort(key=lambda x: x[0], reverse=True)
             results = [item for _, item in blended]
 
-        elif sort_by not in ("highest_stipend",):
+        elif sort_by == "newest":
+            def get_newest_sort_key(item: InternshipInDB):
+                is_internshala = 0 if item.source.lower() == "internshala" else 1
+                posted_time = item.posted_at or item.scraped_at or datetime.min
+                if posted_time.tzinfo is not None:
+                    posted_time = posted_time.replace(tzinfo=None)
+                return (is_internshala, posted_time)
+
+            results.sort(key=get_newest_sort_key, reverse=True)
+
+        elif sort_by not in ("highest_stipend", "newest"):
             source_weights = {
                 "wellfound": 2.0, "yc": 2.0, "ripplematch": 2.0, "huzzle": 1.8,
                 "greenhouse": 1.5, "lever": 1.5, "ashby": 1.5, "workday": 1.5,

@@ -34,7 +34,7 @@ class StudentPlatformsConnector(BaseConnector):
                 "company_name": "CRED",
                 "title": "Backend Engineering Intern",
                 "location": "Bangalore, India",
-                "url": "https://unstop.com/o/unstop-1",
+                "url": "https://unstop.com/internships",
                 "description": "CRED backend intern role listed on Unstop.",
             },
             {
@@ -43,7 +43,7 @@ class StudentPlatformsConnector(BaseConnector):
                 "company_name": "Push Protocol",
                 "title": "Smart Contract Intern",
                 "location": "Remote",
-                "url": "https://devfolio.co/jobs/devfolio-1",
+                "url": "https://devfolio.co/jobs",
                 "description": "Smart contract developer intern listed on Devfolio.",
             },
             {
@@ -52,7 +52,7 @@ class StudentPlatformsConnector(BaseConnector):
                 "company_name": "Github",
                 "title": "Github Campus Intern",
                 "location": "India / Remote",
-                "url": "https://mlh.io/jobs/mlh-1",
+                "url": "https://mlh.io/seasons/2026/jobs",
                 "description": "Github campus program intern listed on MLH.",
             },
         ]

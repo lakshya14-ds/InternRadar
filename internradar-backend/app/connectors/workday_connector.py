@@ -140,9 +140,14 @@ class WorkdayConnector(BaseConnector):
         board = parts[3] if len(parts) >= 4 else ""
 
         external_path = (external_path or "").strip()
+        
+        # If external_path is already a full URL, make sure it is converted if it contains wday/cxs
         if external_path.startswith("http://") or external_path.startswith("https://"):
+            if "wday/cxs" in external_path:
+                return self._convert_workday_api_to_public(external_path)
             return external_path
 
+        constructed_url = ""
         if external_path:
             if not external_path.startswith("/"):
                 external_path = "/" + external_path
@@ -162,17 +167,41 @@ class WorkdayConnector(BaseConnector):
                     external_path = f"/en-US/{board_path}{('/' + rest) if rest else ''}"
 
             if external_path.startswith("/en-US/"):
-                return origin + external_path
-
+                constructed_url = origin + external_path
+            elif board:
+                constructed_url = f"{origin}/en-US/{board}{external_path}"
+            else:
+                constructed_url = origin + external_path
+        else:
             if board:
-                return f"{origin}/en-US/{board}{external_path}"
+                constructed_url = f"{origin}/en-US/{board}"
+            else:
+                constructed_url = careers_url
 
-            return origin + external_path
+        if "wday/cxs" in constructed_url:
+            constructed_url = self._convert_workday_api_to_public(constructed_url)
+        return constructed_url
 
-        if board:
-            return f"{origin}/en-US/{board}"
-
-        return careers_url
+    def _convert_workday_api_to_public(self, url: str) -> str:
+        """Helper to convert any internal Workday API URL containing wday/cxs to public en-US URL."""
+        if not url or "wday/cxs" not in url:
+            return url
+        try:
+            parsed = urlparse(url)
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+            parts = parsed.path.strip("/").split("/")
+            if "jobs" in parts:
+                jobs_idx = parts.index("jobs")
+                board = parts[jobs_idx - 1] if jobs_idx >= 1 else ""
+                external_path_parts = parts[jobs_idx + 1:]
+                ext_path = ""
+                if external_path_parts:
+                    ext_path = "/" + "/".join(external_path_parts)
+                if board:
+                    return f"{origin}/en-US/{board}{ext_path}"
+        except Exception:
+            pass
+        return url
 
     async def fetch_jobs(self, companies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Fetch jobs from configured Workday endpoints."""

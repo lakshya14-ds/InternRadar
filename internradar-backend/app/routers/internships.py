@@ -105,7 +105,7 @@ async def internships_by_category(
 ) -> list[InternshipInDB]:
     """Return India internships in a category.
 
-    Valid categories: Software Engineering, Machine Learning, Data Science,
+    Valid categories: Software Engineering, Machine Learning, AI, Data Science,
     Data Analytics, Cybersecurity, Embedded & Hardware, Cloud & DevOps,
     Mobile Development, UI/UX, Research, Product, Business Analytics,
     Finance, Marketing, Operations, Human Resources, Legal & Compliance,

@@ -99,6 +99,7 @@ export const CATEGORIES = [
   "Data Science",
   "Data Analytics",
   "Machine Learning",
+  "AI",
   "Cybersecurity",
   "Embedded & Hardware",
   "Cloud & DevOps",

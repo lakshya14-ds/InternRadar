@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard, Search, Bookmark, User, Settings,
-  Briefcase, TrendingUp, Zap, Palette, BarChart2, Shield, Cloud, Megaphone
+  Briefcase, TrendingUp, Zap, Palette, BarChart2, Shield, Cloud, Megaphone, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useStore";
@@ -18,6 +18,7 @@ const NAV = [
 
 const CATEGORIES_NAV = [
   { href: "/internships?category=Software+Engineering", label: "Software Engineering", icon: Zap },
+  { href: "/internships?category=AI", label: "AI", icon: Sparkles },
   { href: "/internships?category=Data+Science", label: "Data Science", icon: TrendingUp },
   { href: "/internships?category=Machine+Learning", label: "Machine Learning", icon: Briefcase },
   { href: "/internships?category=UI%2FUX", label: "UI/UX", icon: Palette },

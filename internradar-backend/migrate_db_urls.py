@@ -50,19 +50,100 @@ async def migrate_internships():
                 parts = parsed.path.strip("/").split("/")
                 if "jobs" in parts:
                     jobs_idx = parts.index("jobs")
-                    board = parts[3] if len(parts) >= 4 else ""
+                    board = parts[jobs_idx - 1] if jobs_idx >= 1 else ""
                     external_path_parts = parts[jobs_idx + 1:]
-                    if board and external_path_parts:
+                    ext_path = ""
+                    if external_path_parts:
                         ext_path = "/" + "/".join(external_path_parts)
+                    if board:
                         new_url = f"https://{host}/en-US/{board}{ext_path}"
-                        
                         await collection.update_one({"_id": job["_id"]}, {"$set": {"url": new_url}})
                         wd_updates += 1
             except Exception as e:
                 print(f"Failed to migrate Workday URL {old_url}: {e}")
     print(f"Updated {wd_updates} Workday URLs.")
 
-    # 3. Manual source (just double checking if any relative links remain)
+    # 3. Unstop
+    cursor = collection.find({"source": "unstop"})
+    unstop_jobs = await cursor.to_list(length=1000)
+    print(f"Found {len(unstop_jobs)} Unstop jobs in the database.")
+    unstop_updates = 0
+    for job in unstop_jobs:
+        old_url = job.get("url", "")
+        if "unstop-1" in old_url or "unstop.com/o/" in old_url:
+            new_url = "https://unstop.com/internships"
+            await collection.update_one({"_id": job["_id"]}, {"$set": {"url": new_url}})
+            unstop_updates += 1
+    print(f"Updated {unstop_updates} Unstop URLs.")
+
+    # 4. Simplify Mock URLs
+    cursor = collection.find({"source": "simplify"})
+    simplify_jobs = await cursor.to_list(length=1000)
+    print(f"Found {len(simplify_jobs)} Simplify jobs in the database.")
+    simplify_updates = 0
+    for job in simplify_jobs:
+        ext_id = str(job.get("external_id", ""))
+        old_url = job.get("url", "")
+        new_url = old_url
+        if "simplify-mock-1" in ext_id or "uber" in old_url:
+            new_url = "https://simplify.jobs/c/uber"
+        elif "simplify-mock-2" in ext_id or "adobe" in old_url:
+            new_url = "https://simplify.jobs/c/adobe"
+        elif "simplify-mock-3" in ext_id or "postman" in old_url:
+            new_url = "https://simplify.jobs/c/postman"
+
+        if new_url != old_url:
+            await collection.update_one({"_id": job["_id"]}, {"$set": {"url": new_url}})
+            simplify_updates += 1
+    print(f"Updated {simplify_updates} Simplify URLs.")
+
+    # 5. YC Mock URLs
+    cursor = collection.find({"source": "yc"})
+    yc_jobs = await cursor.to_list(length=1000)
+    print(f"Found {len(yc_jobs)} YC jobs in the database.")
+    yc_updates = 0
+    for job in yc_jobs:
+        ext_id = str(job.get("external_id", ""))
+        old_url = job.get("url", "")
+        new_url = old_url
+        if "yc-mock-1" in ext_id:
+            new_url = "https://www.ycombinator.com/companies/zepto/jobs"
+        elif "yc-mock-2" in ext_id:
+            new_url = "https://www.ycombinator.com/companies/groww/jobs"
+        elif "yc-mock-3" in ext_id:
+            new_url = "https://www.ycombinator.com/companies/giga/jobs"
+
+        if new_url != old_url:
+            await collection.update_one({"_id": job["_id"]}, {"$set": {"url": new_url}})
+            yc_updates += 1
+    print(f"Updated {yc_updates} YC URLs.")
+
+    # 6. JSearch Mock URLs
+    cursor = collection.find({"source": "jsearch"})
+    jsearch_jobs = await cursor.to_list(length=1000)
+    print(f"Found {len(jsearch_jobs)} JSearch jobs in the database.")
+    jsearch_updates = 0
+    for job in jsearch_jobs:
+        ext_id = str(job.get("external_id", ""))
+        old_url = job.get("url", "")
+        new_url = old_url
+        if "mock-jsearch-1" in ext_id:
+            new_url = "https://careers.google.com/jobs/results/?q=intern"
+        elif "mock-jsearch-2" in ext_id:
+            new_url = "https://careers.microsoft.com/us/en/search-results?keywords=internship"
+        elif "mock-jsearch-3" in ext_id:
+            new_url = "https://razorpay.com/jobs/"
+        elif "mock-jsearch-4" in ext_id:
+            new_url = "https://cred.club/careers"
+        elif "mock-jsearch-5" in ext_id:
+            new_url = "https://paytm.com/careers"
+
+        if new_url != old_url:
+            await collection.update_one({"_id": job["_id"]}, {"$set": {"url": new_url}})
+            jsearch_updates += 1
+    print(f"Updated {jsearch_updates} JSearch URLs.")
+
+    # 7. Manual source (just double checking if any relative links remain)
     cursor = collection.find({"source": "manual"})
     manual_jobs = await cursor.to_list(length=1000)
     print(f"Found {len(manual_jobs)} manual source jobs in the database.")

@@ -13,6 +13,20 @@ class InternshipClassifier:
 
     CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         # ── Highly specific / technical ──────────────────────────────────────
+        "AI": (
+            " ai ",
+            "artificial intelligence",
+            "llm",
+            "generative ai",
+            "gen ai",
+            "openai",
+            "anthropic",
+            "langchain",
+            "rag ",
+            "prompt engineer",
+            "agentic",
+            "copilot",
+        ),
         "Machine Learning": (
             "machine learning",
             "ml",
@@ -238,14 +252,14 @@ class InternshipClassifier:
         "Software Engineering".
         """
 
-        haystack = " ".join(
+        haystack = " " + " ".join(
             [
                 internship.title,
                 internship.description,
                 " ".join(internship.skills),
                 " ".join(internship.tags),
             ]
-        ).casefold()
+        ).casefold() + " "
 
         for category, keywords in self.CATEGORY_KEYWORDS.items():
             if any(keyword in haystack for keyword in keywords):

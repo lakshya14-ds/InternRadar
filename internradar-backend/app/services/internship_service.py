@@ -300,10 +300,13 @@ class InternshipService:
         from app.utils.normalization import normalize_company_name
         internship.company = normalize_company_name(internship.company)
 
-        # 2. Validate URL (skip for mocks and tests)
-        from app.utils.validation import validate_job_url
+        # 2. Validate URL (skip for mocks, tests, and certain bypass sources)
+        from app.utils.validation import validate_job_url, clean_url
+        bypass_validation_sources = {"workday", "yc", "simplify", "unstop", "jsearch"}
+        is_bypass = internship.source.lower() in bypass_validation_sources
         is_mock = "mock" in internship.external_id or "test" in internship.external_id or "example.com" in internship.url or not internship.url.startswith("http")
-        if not is_mock:
+        
+        if not is_mock and not is_bypass:
             is_valid, orig_url, canonical_url, final_url = await validate_job_url(internship.url)
             if not is_valid:
                 logger.info("Discarding internship due to invalid URL: %s", internship.url)
@@ -313,9 +316,11 @@ class InternshipService:
             internship.canonical_url = canonical_url
             internship.final_url = final_url
         else:
+            cleaned = clean_url(internship.url)
+            internship.url = cleaned
             internship.original_url = internship.url
-            internship.canonical_url = internship.url
-            internship.final_url = internship.url
+            internship.canonical_url = cleaned
+            internship.final_url = cleaned
 
         # Deduplication
         fingerprint = fingerprint_for_internship(internship)
@@ -359,74 +364,55 @@ class InternshipService:
         page_size: int = 20,
         filters: dict | None = None,
     ) -> tuple[list[InternshipInDB], int]:
-        if not filters:
-            # Load a generous candidate pool, sort by quality×source_weight,
-            # then diversify and slice to the requested window.
-            cursor = (
-                self.collection.find({})
-                .sort("posted_at", DESCENDING)
-                .limit(600)
-            )
-            raw_candidates = [InternshipInDB.model_validate(item) async for item in cursor]
-
-            # Backfill metadata for old docs that lack the new fields.
-            for item in raw_candidates:
-                dump = item.model_dump()
-                if dump.get("quality_score") is None:
-                    enrich_internship_metadata(dump)
-                    # Reflect back so subsequent reads are cheap.
-                    item.quality_score = dump.get("quality_score")
-                    item.company_type = dump.get("company_type")
-                    item.funding_stage = dump.get("funding_stage")
-
-            source_weights = {
-                "wellfound": 2.0, "yc": 2.0, "ripplematch": 2.0, "huzzle": 1.8,
-                "greenhouse": 1.5, "lever": 1.5, "ashby": 1.5, "workday": 1.5,
-                "smartrecruiters": 1.5, "simplify": 1.5, "handshake": 1.5,
-                "icims": 1.5, "taleo": 1.5, "successfactors": 1.5, "jobvite": 1.5, "bamboohr": 1.5,
-                "startup_india": 1.8, "inc42": 1.8, "headstart": 1.8, "foundit": 1.5,
-                "iit_portal": 2.0, "nit_portal": 1.8,
-                "unstop": 1.5, "devfolio": 1.5, "mlh": 2.0, "hackerearth": 1.5, "codechef": 1.5, "geeksforgeeks": 1.2,
-                "internshala": 0.5, "manual": 0.5,
-            }
-
-            def get_candidate_sort_key(item: InternshipInDB):
-                q_score = item.quality_score if item.quality_score is not None else calculate_quality_score(item.model_dump())
-                weight = source_weights.get(item.source.lower(), 1.0)
-                posted_time = item.posted_at or item.scraped_at or datetime.min
-                if posted_time.tzinfo is not None:
-                    posted_time = posted_time.replace(tzinfo=None)
-                return (q_score * weight, posted_time)
-
-            raw_candidates.sort(key=get_candidate_sort_key, reverse=True)
-            # Diversify across the full pool, then paginated-slice.
-            diversified = diversify_feed(raw_candidates, page_size=len(raw_candidates))
-
-            skip = max(page - 1, 0) * page_size
-            total_count = await self.collection.count_documents({})
-            return diversified[skip:skip + page_size], total_count
-
-        skip = max(page - 1, 0) * page_size
+        # Always fetch a candidate pool of up to 600 items to sort in memory.
+        # This allows us to prioritize non-Internshala sources first across all views.
         cursor = (
             self.collection.find(filters or {})
             .sort("posted_at", DESCENDING)
-            .skip(skip)
-            .limit(page_size)
+            .limit(600)
         )
-        results = [InternshipInDB.model_validate(item) async for item in cursor]
-        for item in results:
+        raw_candidates = [InternshipInDB.model_validate(item) async for item in cursor]
+
+        # Backfill metadata for old docs that lack the new fields.
+        for item in raw_candidates:
             if not item.company_logo:
                 item.company_logo = resolve_company_logo(item.company)
+            dump = item.model_dump()
+            if dump.get("quality_score") is None:
+                enrich_internship_metadata(dump)
+                item.quality_score = dump.get("quality_score")
+                item.company_type = dump.get("company_type")
+                item.funding_stage = dump.get("funding_stage")
+
+        def get_newest_sort_key(item: InternshipInDB):
+            is_internshala = 0 if item.source.lower() == "internshala" else 1
+            posted_time = item.posted_at or item.scraped_at or datetime.min
+            if posted_time.tzinfo is not None:
+                posted_time = posted_time.replace(tzinfo=None)
+            return (is_internshala, posted_time)
+
+        raw_candidates.sort(key=get_newest_sort_key, reverse=True)
+
+        skip = max(page - 1, 0) * page_size
         total_count = await self.collection.count_documents(filters or {})
-        return results, total_count
+        return raw_candidates[skip:skip + page_size], total_count
 
     async def latest(self, limit: int = 50) -> list[InternshipInDB]:
-        cursor = self.collection.find().sort("posted_at", DESCENDING).limit(limit)
+        cursor = self.collection.find().sort("posted_at", DESCENDING).limit(300)
         results = [InternshipInDB.model_validate(item) async for item in cursor]
         for item in results:
             if not item.company_logo:
                 item.company_logo = resolve_company_logo(item.company)
-        return results
+
+        def get_newest_sort_key(item: InternshipInDB):
+            is_internshala = 0 if item.source.lower() == "internshala" else 1
+            posted_time = item.posted_at or item.scraped_at or datetime.min
+            if posted_time.tzinfo is not None:
+                posted_time = posted_time.replace(tzinfo=None)
+            return (is_internshala, posted_time)
+
+        results.sort(key=get_newest_sort_key, reverse=True)
+        return results[:limit]
 
     async def by_company(self, company: str) -> list[InternshipInDB]:
         cursor = (
@@ -440,30 +426,58 @@ class InternshipService:
         return results
 
     async def by_category(self, category: str) -> list[InternshipInDB]:
-        cursor = self.collection.find({"category": category}).sort("posted_at", DESCENDING)
+        cursor = self.collection.find({"category": category}).sort("posted_at", DESCENDING).limit(300)
         results = [InternshipInDB.model_validate(item) async for item in cursor]
         for item in results:
             if not item.company_logo:
                 item.company_logo = resolve_company_logo(item.company)
+
+        def get_newest_sort_key(item: InternshipInDB):
+            is_internshala = 0 if item.source.lower() == "internshala" else 1
+            posted_time = item.posted_at or item.scraped_at or datetime.min
+            if posted_time.tzinfo is not None:
+                posted_time = posted_time.replace(tzinfo=None)
+            return (is_internshala, posted_time)
+
+        results.sort(key=get_newest_sort_key, reverse=True)
         return results
 
     async def remote(self) -> list[InternshipInDB]:
-        cursor = self.collection.find({"remote": True}).sort("posted_at", DESCENDING)
+        cursor = self.collection.find({"remote": True}).sort("posted_at", DESCENDING).limit(300)
         results = [InternshipInDB.model_validate(item) async for item in cursor]
         for item in results:
             if not item.company_logo:
                 item.company_logo = resolve_company_logo(item.company)
+
+        def get_newest_sort_key(item: InternshipInDB):
+            is_internshala = 0 if item.source.lower() == "internshala" else 1
+            posted_time = item.posted_at or item.scraped_at or datetime.min
+            if posted_time.tzinfo is not None:
+                posted_time = posted_time.replace(tzinfo=None)
+            return (is_internshala, posted_time)
+
+        results.sort(key=get_newest_sort_key, reverse=True)
         return results
 
     async def by_location(self, location: str) -> list[InternshipInDB]:
         cursor = (
             self.collection.find({"location": {"$regex": location, "$options": "i"}})
             .sort("posted_at", DESCENDING)
+            .limit(300)
         )
         results = [InternshipInDB.model_validate(item) async for item in cursor]
         for item in results:
             if not item.company_logo:
                 item.company_logo = resolve_company_logo(item.company)
+
+        def get_newest_sort_key(item: InternshipInDB):
+            is_internshala = 0 if item.source.lower() == "internshala" else 1
+            posted_time = item.posted_at or item.scraped_at or datetime.min
+            if posted_time.tzinfo is not None:
+                posted_time = posted_time.replace(tzinfo=None)
+            return (is_internshala, posted_time)
+
+        results.sort(key=get_newest_sort_key, reverse=True)
         return results
 
     async def by_source(self, source: str) -> list[InternshipInDB]:
@@ -528,8 +542,9 @@ class InternshipService:
         
         related_map = {
             "Software Engineering": ["Cloud & DevOps", "Mobile Development", "Embedded & Hardware", "UI/UX"],
-            "Data Science": ["Machine Learning", "Data Analytics", "Research"],
-            "Machine Learning": ["Data Science", "Research"],
+            "Data Science": ["Machine Learning", "AI", "Data Analytics", "Research"],
+            "Machine Learning": ["Data Science", "AI", "Research"],
+            "AI": ["Machine Learning", "Data Science", "Research"],
             "Data Analytics": ["Data Science", "Business Analytics"],
             "Cloud & DevOps": ["Software Engineering", "Cybersecurity"],
             "Product": ["UI/UX", "Business Analytics", "Marketing"],

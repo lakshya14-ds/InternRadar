@@ -43,3 +43,9 @@ class TestWorkdayUrlBuilder:
             "https://infosys.wd3.myworkdayjobs.com/wday/cxs/infosys/Infosys/jobs",
             ""
         ) == "https://infosys.wd3.myworkdayjobs.com/en-US/Infosys"
+
+    def test_converts_api_url_returned_in_external_path(self, connector: WorkdayConnector):
+        assert connector._build_workday_url(
+            "https://infosys.wd3.myworkdayjobs.com/wday/cxs/infosys/Infosys/jobs",
+            "https://infosys.wd3.myworkdayjobs.com/wday/cxs/infosys/Infosys/jobs/job/Pune/Soft_123"
+        ) == "https://infosys.wd3.myworkdayjobs.com/en-US/Infosys/job/Pune/Soft_123"

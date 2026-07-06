@@ -106,6 +106,7 @@ export function CommandPalette() {
 
   const trendingCategories = [
     { label: "Software Engineering", href: "/internships?category=Software+Engineering", icon: Briefcase, desc: "Quick Filter" },
+    { label: "AI", href: "/internships?category=AI", icon: Briefcase, desc: "Quick Filter" },
     { label: "Data Science", href: "/internships?category=Data+Science", icon: Briefcase, desc: "Quick Filter" },
     { label: "UI/UX Design", href: "/internships?category=UI%2FUX", icon: Briefcase, desc: "Quick Filter" },
   ];

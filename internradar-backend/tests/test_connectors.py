@@ -241,3 +241,17 @@ class TestIsIndiaLocation:
 
     def test_rejects_not_specified(self, connector):
         assert not connector.is_india_location("Not specified")
+
+
+# ── clean_url tests ───────────────────────────────────────────────────────────
+
+class TestCleanUrl:
+    def test_strips_tracking_parameters(self):
+        from app.utils.validation import clean_url
+        url = "https://careers.google.com/jobs/results/?q=intern&utm_source=linkedin&ref=123"
+        assert clean_url(url) == "https://careers.google.com/jobs/results/?q=intern"
+
+    def test_preserves_non_tracking_parameters(self):
+        from app.utils.validation import clean_url
+        url = "https://example.com/job?id=9988&gh_jid=12345"
+        assert clean_url(url) == "https://example.com/job?id=9988&gh_jid=12345"

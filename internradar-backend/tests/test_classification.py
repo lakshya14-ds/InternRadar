@@ -34,7 +34,7 @@ class TestClassifier:
         assert classifier.classify(make_internship("NLP Engineer Intern")) == "Machine Learning"
 
     def test_generative_ai(self):
-        assert classifier.classify(make_internship("Generative AI Intern")) == "Machine Learning"
+        assert classifier.classify(make_internship("Generative AI Intern")) == "AI"
 
     def test_data_science(self):
         assert classifier.classify(make_internship("Data Scientist Intern")) == "Data Science"
@@ -106,3 +106,13 @@ class TestClassifier:
         # "ML Infrastructure Engineer Intern" has both ML and software keywords
         result = classifier.classify(make_internship("ML Infrastructure Engineer Intern"))
         assert result == "Machine Learning"
+
+    def test_ai(self):
+        assert classifier.classify(make_internship("AI Engineer Intern")) == "AI"
+        assert classifier.classify(make_internship("Generative AI Intern")) == "AI"
+        assert classifier.classify(make_internship("LLM Research Intern")) == "AI"
+        assert classifier.classify(make_internship("Prompt Engineering Intern")) == "AI"
+
+    def test_ai_no_false_positive_with_contain(self):
+        # Ordinary words containing "ai" (like "contain", "daily", "details", "email") must not classify as "AI"
+        assert classifier.classify(make_internship("Software Engineer Intern", description="Must contain daily email updates and details")) == "Software Engineering"
