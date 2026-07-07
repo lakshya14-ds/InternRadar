@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 const MOBILE_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/internships", label: "Browse", icon: Search },
-  { href: "/saved", label: "Saved", icon: Bookmark },
+  { href: "/saved", label: "Bookmarks", icon: Bookmark },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -18,7 +18,7 @@ export function MobileNav() {
 
   return (
     <div className="fixed bottom-5 left-4 right-4 z-40 lg:hidden">
-      <div className="flex items-center justify-around h-14 rounded-2xl border border-white/10 bg-[#09090b]/85 backdrop-blur-xl shadow-2xl shadow-orange-950/5 px-3">
+      <div className="flex items-center justify-around h-14 rounded-2xl border border-white/5 bg-[#050308]/80 backdrop-blur-lg shadow-2xl shadow-black/80 px-2">
         {MOBILE_NAV.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
@@ -36,13 +36,13 @@ export function MobileNav() {
               )}
               <item.icon
                 className={cn(
-                  "w-5 h-5 transition-transform duration-200",
+                  "w-4 h-4 transition-transform duration-200 relative z-10",
                   active ? "text-orange-400 scale-110" : "text-muted-foreground hover:text-white"
                 )}
               />
               <span
                 className={cn(
-                  "text-[9px] font-bold mt-1 tracking-wide uppercase",
+                  "text-[8px] font-bold mt-1 tracking-wider uppercase relative z-10",
                   active ? "text-orange-300 font-extrabold" : "text-muted-foreground"
                 )}
               >

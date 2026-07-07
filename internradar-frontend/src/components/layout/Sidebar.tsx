@@ -8,25 +8,26 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useStore";
+import { motion } from "framer-motion";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/internships", label: "Internships", icon: Search },
-  { href: "/saved", label: "Saved", icon: Bookmark },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/internships", label: "Browse Roles", icon: Search },
+  { href: "/saved", label: "Bookmarks", icon: Bookmark },
+  { href: "/profile", label: "My Profile", icon: User },
 ];
 
 const CATEGORIES_NAV = [
   { href: "/internships?category=Software+Engineering", label: "Software Engineering", icon: Zap },
-  { href: "/internships?category=AI", label: "AI", icon: Sparkles },
+  { href: "/internships?category=AI", label: "AI & Deep Tech", icon: Sparkles },
   { href: "/internships?category=Data+Science", label: "Data Science", icon: TrendingUp },
   { href: "/internships?category=Machine+Learning", label: "Machine Learning", icon: Briefcase },
-  { href: "/internships?category=UI%2FUX", label: "UI/UX", icon: Palette },
-  { href: "/internships?category=Product", label: "Product", icon: Settings },
+  { href: "/internships?category=UI%2FUX", label: "UI/UX Design", icon: Palette },
+  { href: "/internships?category=Product", label: "Product Management", icon: Settings },
   { href: "/internships?category=Data+Analytics", label: "Data Analytics", icon: BarChart2 },
   { href: "/internships?category=Cybersecurity", label: "Cybersecurity", icon: Shield },
   { href: "/internships?category=Cloud+%26+DevOps", label: "Cloud & DevOps", icon: Cloud },
-  { href: "/internships?category=Marketing", label: "Marketing", icon: Megaphone },
+  { href: "/internships?category=Marketing", label: "Growth Marketing", icon: Megaphone },
 ];
 
 export function Sidebar() {
@@ -39,14 +40,14 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-4 top-[4.5rem] bottom-4 z-30 flex flex-col rounded-2xl border border-white/5 bg-[#080214]/65 backdrop-blur-xl shadow-2xl shadow-indigo-950/20 transition-all duration-300 overflow-hidden",
-        sidebarOpen ? "w-56" : "w-0 border-0 opacity-0 pointer-events-none"
+        "fixed left-4 top-[4.5rem] bottom-4 z-30 flex flex-col rounded-2xl border bg-[#050308]/60 backdrop-blur-md transition-all duration-300 overflow-hidden",
+        sidebarOpen ? "w-56 border-white/5 opacity-100 shadow-2xl shadow-orange-950/5" : "w-0 border-transparent opacity-0 pointer-events-none"
       )}
     >
-      <div className="flex-1 overflow-y-auto py-5 px-4 space-y-6">
+      <div className="flex-1 overflow-y-auto py-5 px-3 space-y-6 hide-scrollbar">
         <div>
-          <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest px-3 mb-2.5">Menu</p>
-          <nav className="space-y-1">
+          <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest px-3 mb-2">Core Menu</p>
+          <nav className="space-y-1 relative">
             {NAV.map((item) => {
               const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href) && !currentCategory);
               return (
@@ -54,17 +55,21 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200 border",
+                    "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all duration-200",
                     active
-                      ? "bg-gradient-to-r from-orange-500/10 to-amber-500/5 text-orange-300 border-orange-500/20 shadow-lg shadow-orange-500/5"
-                      : "text-muted-foreground border-transparent hover:text-foreground hover:bg-white/5"
+                      ? "text-orange-300 font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/[0.02]"
                   )}
                 >
                   {active && (
-                    <span className="absolute left-0 w-1 h-5 rounded-r bg-orange-500" />
+                    <motion.div
+                      layoutId="activeSidebarGlow"
+                      className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-transparent border-l-2 border-orange-500 rounded-xl"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
                   )}
-                  <item.icon className={cn("w-4 h-4 shrink-0 transition-transform duration-200 group-hover:scale-110", active ? "text-orange-400" : "text-muted-foreground group-hover:text-foreground")} />
-                  <span className="truncate">{item.label}</span>
+                  <item.icon className={cn("w-4 h-4 shrink-0 relative z-10 transition-transform duration-200 group-hover:scale-110", active ? "text-orange-400" : "text-muted-foreground group-hover:text-foreground")} />
+                  <span className="truncate relative z-10">{item.label}</span>
                 </Link>
               );
             })}
@@ -72,8 +77,8 @@ export function Sidebar() {
         </div>
 
         <div>
-          <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest px-3 mb-2.5">Quick Filters</p>
-          <nav className="space-y-1">
+          <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest px-3 mb-2">Verticals</p>
+          <nav className="space-y-0.5">
             {CATEGORIES_NAV.map((item) => {
               const categoryParam = item.href.split("category=")[1];
               const active = pathname === "/internships" && categoryParam && currentCategory === decodeURIComponent(categoryParam);
@@ -82,17 +87,21 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "group relative flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-semibold tracking-wide transition-all duration-200 border",
+                    "group relative flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-semibold tracking-wide transition-all duration-150",
                     active
-                      ? "bg-gradient-to-r from-orange-500/10 to-amber-500/5 text-orange-300 border-orange-500/20 shadow-lg shadow-orange-500/5"
-                      : "text-muted-foreground border-transparent hover:text-foreground hover:bg-white/5"
+                      ? "text-orange-300 font-bold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/[0.01]"
                   )}
                 >
                   {active && (
-                    <span className="absolute left-0 w-0.5 h-4 rounded-r bg-orange-500" />
+                    <motion.div
+                      layoutId="activeCategoryGlow"
+                      className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent border-l border-orange-500/60 rounded-xl"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
                   )}
-                  <item.icon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110", active ? "text-orange-400" : "text-muted-foreground group-hover:text-foreground")} />
-                  <span className="truncate">{item.label}</span>
+                  <item.icon className={cn("w-3.5 h-3.5 shrink-0 relative z-10 transition-transform duration-200 group-hover:scale-110", active ? "text-orange-400" : "text-muted-foreground group-hover:text-foreground")} />
+                  <span className="truncate relative z-10">{item.label}</span>
                 </Link>
               );
             })}

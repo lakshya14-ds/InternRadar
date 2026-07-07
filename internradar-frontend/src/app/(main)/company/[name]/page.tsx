@@ -40,7 +40,7 @@ export default function CompanyProfilePage() {
       <div className="text-center py-20 bg-card border border-border/50 rounded-2xl glass max-w-xl mx-auto mt-10">
         <Building2 className="w-12 h-12 mx-auto mb-4 opacity-20 text-orange-400" />
         <h3 className="text-white font-bold text-sm mb-2">Company Profile Not Found</h3>
-        <p className="text-xs text-muted-foreground mb-6">We couldn't retrieve details for this organization.</p>
+        <p className="text-xs text-muted-foreground mb-6">We couldn&apos;t retrieve details for this organization.</p>
         <button onClick={() => router.back()} className="inline-flex items-center gap-1 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-xs font-semibold">
           <ArrowLeft className="w-3.5 h-3.5" /> Go Back
         </button>
@@ -83,30 +83,16 @@ export default function CompanyProfilePage() {
             </div>
             
             <div className="space-y-1.5">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-extrabold text-white tracking-tight">{companyName}</h1>
-                {details.company_type && (
-                  <span className={cn(
-                    "text-[10px] font-bold px-2.5 py-1 rounded-full border tracking-wide uppercase",
-                    details.company_type === "mnc" && "bg-blue-500/10 text-blue-400 border-blue-500/20",
-                    details.company_type === "startup" && "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-                    details.company_type === "enterprise" && "bg-purple-500/10 text-purple-400 border-purple-500/20",
-                  )}>
-                    {details.company_type === "startup" && details.funding_stage
-                      ? `${details.company_type} · ${details.funding_stage}`
-                      : details.company_type}
-                  </span>
-                )}
-              </div>
-
+              <h1 className="text-3xl font-extrabold text-white tracking-tight">{companyName}</h1>
+              
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-semibold">
                 <span className="flex items-center gap-1"><Briefcase className="w-3.5 h-3.5 text-orange-400/85" /> {brand.industry || "Technology"}</span>
                 <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-orange-400/85" /> {brand.company_size || "100-500 employees"}</span>
                 {brand.website && (
-                  <a
-                    href={brand.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <a 
+                    href={brand.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
                     className="flex items-center gap-1 text-orange-400 hover:text-orange-300 transition-colors"
                   >
                     <Globe className="w-3.5 h-3.5 shrink-0" /> Website

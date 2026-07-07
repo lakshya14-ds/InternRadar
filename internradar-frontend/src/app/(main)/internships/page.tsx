@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal, X, Loader2, Briefcase, Zap, Sparkles, Bell, Check } from "lucide-react";
 import { subDays } from "date-fns";
@@ -13,6 +13,21 @@ import { FilterSidebar } from "@/components/internships/FilterSidebar";
 
 import type { Filters } from "@/components/internships/FilterSidebar";
 const DEFAULT_FILTERS: Filters = { category: "", source: "", remote: null, period: "all" };
+
+function InternshipCardSkeleton() {
+  return (
+    <div className="bg-[#0a080f]/40 border border-white/5 rounded-2xl p-5 glass h-[260px] relative overflow-hidden shimmer-shimmer">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5" />
+        <div className="w-20 h-5 rounded-full bg-white/5" />
+      </div>
+      <div className="h-4 w-24 bg-white/5 rounded mb-2" />
+      <div className="h-6 w-48 bg-white/5 rounded mb-4" />
+      <div className="h-4 w-32 bg-white/5 rounded mb-4" />
+      <div className="mt-auto h-9 w-full bg-white/5 rounded-xl" />
+    </div>
+  );
+}
 
 export default function InternshipsPage() {
   const searchParams = useSearchParams();
@@ -58,10 +73,6 @@ export default function InternshipsPage() {
   }, [query, filters]);
 
   const hasSearch = Object.keys(searchArgs).length > 0;
-
-  // Single infinite query serves both the search and browse paths. The query
-  // function routes to /search when filters/query are present, else /list.
-  // Each page fetches PAGE_SIZE results; "Load more" appends the next page.
   const PAGE_SIZE = 24;
 
   const {
@@ -127,7 +138,7 @@ export default function InternshipsPage() {
   const hasActiveFilters = filters.category || filters.source || filters.remote !== null || filters.period !== "all";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -148,19 +159,19 @@ export default function InternshipsPage() {
       {/* Search & Filter Bar */}
       <form onSubmit={handleSearch} className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500/60" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by role name, employer keyword, or tech stack..."
-            className="w-full pl-11 pr-10 py-3 bg-[#18181b]/60 border border-white/5 rounded-xl text-xs placeholder:text-muted-foreground text-white focus:outline-none focus:border-orange-500/40 glass"
+            className="w-full pl-11 pr-10 py-3 bg-[#0a080f]/60 border border-white/5 rounded-xl text-xs placeholder:text-muted-foreground/60 text-white focus:outline-none focus:border-orange-500/40 glass"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white"
             >
               <X className="w-4 h-4" />
             </button>
@@ -168,17 +179,17 @@ export default function InternshipsPage() {
         </div>
         <button
           type="submit"
-          className="px-5 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20 transition-all"
+          className="px-5 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20 transition-all focus:outline-none"
         >
-          Search
+          Search Database
         </button>
         <button
           type="button"
           onClick={() => setShowFilters(!showFilters)}
-          className={`px-3.5 py-3 rounded-xl text-xs font-bold border transition-all ${
+          className={`px-3.5 py-3 rounded-xl text-xs font-bold border transition-all focus:outline-none ${
             hasActiveFilters || showFilters
-              ? "bg-orange-600/10 border-orange-500/30 text-orange-300"
-              : "bg-[#18181b]/60 border-white/5 text-muted-foreground hover:text-white"
+              ? "bg-orange-600/10 border-orange-500/30 text-orange-400"
+              : "bg-[#0a080f]/60 border-white/5 text-muted-foreground hover:text-white"
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
@@ -187,7 +198,7 @@ export default function InternshipsPage() {
 
       {/* Save Search Button / Form */}
       {session?.accessToken && (hasActiveFilters || query) && (
-        <div className="bg-[#18181b]/30 border border-white/5 rounded-2xl p-4 glass">
+        <div className="bg-[#0a080f]/40 border border-white/5 rounded-2xl p-4 glass">
           {!showSaveDialog ? (
             <button
               type="button"
@@ -195,9 +206,9 @@ export default function InternshipsPage() {
                 setShowSaveDialog(true);
                 setSaveName(query ? `Alerts for "${query}"` : "My Custom Alert");
               }}
-              className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors"
+              className="inline-flex items-center gap-2 text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors focus:outline-none"
             >
-              <Bell className="w-4 h-4" /> Save this search & get email alerts
+              <Bell className="w-4 h-4" /> Save this search query & configure email alerts
             </button>
           ) : (
             <form
@@ -226,25 +237,25 @@ export default function InternshipsPage() {
               className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full"
             >
               <div className="flex-1 w-full">
-                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Search Alert Name</label>
+                <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Search Alert Title</label>
                 <input
                   type="text"
                   required
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
-                  placeholder="e.g. Software remote alerts"
-                  className="w-full px-3 py-2 bg-[#09090b]/60 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500/40"
+                  placeholder="e.g. Software engineering remote alerts"
+                  className="w-full px-3.5 py-2.5 bg-[#050308]/60 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500/40"
                 />
               </div>
               <div className="w-full sm:w-auto">
-                <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Frequency</label>
+                <label className="block text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Alert Frequency</label>
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#09090b]/60 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500/40"
+                  className="w-full px-3 py-2.5 bg-[#050308]/60 border border-white/5 rounded-xl text-xs text-white focus:outline-none focus:border-orange-500/40"
                 >
-                  <option value="instant">Instant Alerts</option>
-                  <option value="daily">Daily Digest</option>
+                  <option value="instant">Instant Notification</option>
+                  <option value="daily">Daily Summary</option>
                   <option value="weekly">Weekly Digest</option>
                 </select>
               </div>
@@ -252,14 +263,14 @@ export default function InternshipsPage() {
                 <button
                   type="button"
                   onClick={() => setShowSaveDialog(false)}
-                  className="px-3 py-2 border border-white/5 text-muted-foreground hover:text-white rounded-xl text-xs font-semibold"
+                  className="px-4 py-2.5 border border-white/5 text-muted-foreground hover:text-white rounded-xl text-xs font-semibold focus:outline-none"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingSearch || saveSuccess}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg focus:outline-none"
                 >
                   {isSavingSearch ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -268,7 +279,7 @@ export default function InternshipsPage() {
                   ) : (
                     <Bell className="w-3.5 h-3.5" />
                   )}
-                  {isSavingSearch ? "Saving..." : saveSuccess ? "Alert Created!" : "Enable Alerts"}
+                  {isSavingSearch ? "Saving..." : saveSuccess ? "Alert Configured!" : "Create Search Alert"}
                 </button>
               </div>
             </form>
@@ -280,19 +291,19 @@ export default function InternshipsPage() {
       <div className="flex gap-2 pb-2 overflow-x-auto custom-scrollbar flex-wrap">
         {[
           { id: "all", label: "All Opportunities" },
-          { id: "ats", label: "Top ATS Jobs" },
-          { id: "startups", label: "Top Startups" },
-          { id: "iit_nit", label: "Top IITs/NITs" },
-          { id: "mncs", label: "Top MNCs" },
+          { id: "ats", label: "Top ATS Openings" },
+          { id: "startups", label: "Startup Roles" },
+          { id: "iit_nit", label: "IITs / NITs Portal" },
+          { id: "mncs", label: "Tech MNCs" },
           { id: "verified", label: "Verified Only" }
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setQuickFilter(tab.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all focus:outline-none ${
               quickFilter === tab.id
                 ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md shadow-orange-500/10"
-                : "bg-[#18181b]/60 border border-white/5 text-muted-foreground hover:text-white"
+                : "bg-[#0a080f]/60 border border-white/5 text-muted-foreground hover:text-white"
             }`}
           >
             {tab.label}
@@ -305,11 +316,11 @@ export default function InternshipsPage() {
         <AnimatePresence>
           {showFilters && (
             <motion.div
-              initial={{ opacity: 0, x: -20, width: 0 }}
+              initial={{ opacity: 0, x: -15, width: 0 }}
               animate={{ opacity: 1, x: 0, width: 230 }}
-              exit={{ opacity: 0, x: -20, width: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="shrink-0 bg-[#18181b]/40 border border-white/5 rounded-2xl p-5 glass w-full lg:w-56 sticky top-20 overflow-hidden"
+              exit={{ opacity: 0, x: -15, width: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="shrink-0 bg-[#0a080f]/40 border border-white/5 rounded-2xl p-5 glass w-full lg:w-[230px] sticky top-20 overflow-hidden"
             >
               <FilterSidebar filters={filters} onChange={setFilters} onReset={resetFilters} />
             </motion.div>
@@ -319,23 +330,24 @@ export default function InternshipsPage() {
         {/* Results Catalog */}
         <div className="flex-1 min-w-0 w-full">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass">
-              <Loader2 className="w-8 h-8 animate-spin mb-4 text-orange-400" />
-              <p className="text-xs font-semibold">Discovering matching career board opportunities...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+              {[...Array(6)].map((_, i) => (
+                <InternshipCardSkeleton key={i} />
+              ))}
             </div>
           ) : !internships?.length ? (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass text-center">
-              <Briefcase className="w-12 h-12 mb-4 opacity-20 text-orange-400 animate-pulse" />
-              <h3 className="text-white font-bold text-sm mb-1">No Internships Found</h3>
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-[#0a080f]/40 border border-white/5 rounded-2xl glass text-center">
+              <Briefcase className="w-12 h-12 mb-4 opacity-20 text-orange-450 animate-pulse" />
+              <h3 className="text-white font-bold text-sm mb-1">No Opportunities Found</h3>
               <p className="text-xs text-muted-foreground max-w-xs mb-6">
-                No matching opportunities found for your criteria. Try adjusting filters or search queries.
+                We couldn&apos;t locate any listings matching your queries. Adjust filters to search broader scopes.
               </p>
               {(hasActiveFilters || query) && (
                 <button
                   onClick={resetFilters}
-                  className="bg-orange-600/10 border border-orange-500/20 text-orange-300 font-bold text-xs px-5 py-2 rounded-xl hover:bg-orange-500/20 transition-all"
+                  className="bg-orange-600/10 border border-orange-500/20 text-orange-400 font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-orange-500/20 transition-all focus:outline-none"
                 >
-                  Clear Filters & Search
+                  Clear Filters & Search Query
                 </button>
               )}
             </div>
@@ -347,10 +359,10 @@ export default function InternshipsPage() {
                     <motion.div
                       key={internship._id || internship.external_id}
                       layout
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25, delay: Math.min(0.015 * i, 0.25) }}
+                      transition={{ duration: 0.25, delay: Math.min(0.015 * i, 0.2) }}
                     >
                       <InternshipCard internship={internship} />
                     </motion.div>
@@ -363,15 +375,15 @@ export default function InternshipsPage() {
                   <button
                     onClick={() => fetchNextPage()}
                     disabled={isFetchingNextPage}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-orange-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none"
                   >
                     {isFetchingNextPage ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Loading more…
+                        <Loader2 className="w-4 h-4 animate-spin" /> Loading more roles…
                       </>
                     ) : (
                       <>
-                        <Briefcase className="w-4 h-4" /> Load more opportunities
+                        <Briefcase className="w-4 h-4" /> Load More Opportunities
                       </>
                     )}
                   </button>

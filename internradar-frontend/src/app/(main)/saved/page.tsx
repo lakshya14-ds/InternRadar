@@ -76,17 +76,17 @@ export default function SavedPage() {
 
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass max-w-xl mx-auto mt-10">
-        <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-4 text-orange-400">
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-[#0a080f]/40 border border-white/5 rounded-2xl glass max-w-xl mx-auto mt-10">
+        <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/25 flex items-center justify-center mb-4 text-orange-400">
           <Bookmark className="w-6 h-6" />
         </div>
-        <h2 className="text-white font-bold text-base mb-1">Access Saved Collections</h2>
-        <p className="text-xs text-muted-foreground max-w-xs text-center mb-6">
+        <h2 className="text-white font-extrabold text-sm uppercase tracking-wider mb-1">Access Saved Collections</h2>
+        <p className="text-xs text-muted-foreground max-w-xs text-center mb-6 font-semibold leading-relaxed">
           Sign in to save internship opportunities, create personalized collections, and receive custom notifications.
         </p>
         <Link
           href="/login"
-          className="bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all"
+          className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 transition-all focus:outline-none"
         >
           Sign In Now
         </Link>
@@ -95,7 +95,7 @@ export default function SavedPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       {/* Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -112,32 +112,32 @@ export default function SavedPage() {
       {/* Quick stats board */}
       {saved && saved.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-5 glass flex items-center gap-4">
+          <div className="bg-[#0a080f]/40 border border-white/5 rounded-2xl p-5 glass flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-400">
               <Bookmark className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Saved Positions</span>
+              <span className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-wider">Bookmarked Positions</span>
               <p className="text-xl font-black text-white mt-0.5">{stats.total}</p>
             </div>
           </div>
 
-          <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-5 glass flex items-center gap-4">
+          <div className="bg-[#0a080f]/40 border border-white/5 rounded-2xl p-5 glass flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Remote Positions</span>
+              <span className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-wider">Remote Placements</span>
               <p className="text-xl font-black text-white mt-0.5">{stats.remote}</p>
             </div>
           </div>
 
-          <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl p-5 glass flex items-center gap-4">
+          <div className="bg-[#0a080f]/40 border border-white/5 rounded-2xl p-5 glass flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
               <Briefcase className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Primary Category</span>
+              <span className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-wider">Primary Field</span>
               <p className="text-xs font-bold text-white mt-0.5 truncate max-w-[170px]">
                 {Object.entries(stats.categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "None"}
               </p>
@@ -155,10 +155,10 @@ export default function SavedPage() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`text-[10px] font-bold px-3.5 py-1.5 rounded-full border transition-all uppercase tracking-wider ${
+                className={`text-[9px] font-bold px-3.5 py-1.5 rounded-full border transition-all uppercase tracking-wider focus:outline-none ${
                   selectedCategory === cat
                     ? "bg-orange-600 border-transparent text-white shadow-lg shadow-orange-500/15"
-                    : "bg-white/5 border-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
+                    : "bg-[#0a080f]/40 border-white/5 text-muted-foreground hover:text-white hover:bg-white/10"
                 }`}
               >
                 {cat} {cat !== "All" && `(${stats.categories[cat] || 0})`}
@@ -170,13 +170,13 @@ export default function SavedPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3">
             {/* Search inputs */}
             <div className="relative w-full sm:w-60">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-orange-500/60" />
               <input
                 type="text"
                 placeholder="Search saved items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#18181b]/60 border border-white/5 rounded-xl text-xs placeholder:text-muted-foreground text-white focus:outline-none focus:border-orange-500/40"
+                className="w-full pl-9 pr-4 py-2 bg-[#0a080f]/60 border border-white/5 rounded-xl text-xs placeholder:text-muted-foreground/60 text-white focus:outline-none focus:border-orange-500/40"
               />
             </div>
 
@@ -188,7 +188,7 @@ export default function SavedPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as "newest" | "company" | "title")}
-                className="w-full sm:w-auto bg-[#18181b]/60 border border-white/5 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:text-white focus:outline-none"
+                className="w-full sm:w-auto bg-[#0a080f]/60 border border-white/5 rounded-xl px-3 py-2 text-xs text-muted-foreground/80 hover:text-white focus:outline-none font-bold uppercase tracking-wider"
               >
                 <option value="newest">Recently Saved</option>
                 <option value="company">Company Name</option>
@@ -202,35 +202,35 @@ export default function SavedPage() {
       {/* Main content lists */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-44 bg-card/40 border border-white/5 rounded-2xl animate-pulse" />
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-[260px] bg-[#0a080f]/40 border border-white/5 rounded-2xl animate-pulse glass" />
           ))}
         </div>
       ) : !saved?.length ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass text-center max-w-xl mx-auto">
-          <Bookmark className="w-12 h-12 mb-4 opacity-20 text-orange-400 animate-pulse" />
-          <h3 className="text-white font-bold text-sm mb-1">No Bookmarked Internships</h3>
-          <p className="text-xs text-muted-foreground max-w-xs mb-6">
-            Find roles that match your interests on our main directory and save them here.
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-[#0a080f]/40 border border-white/5 rounded-2xl glass text-center max-w-xl mx-auto">
+          <Bookmark className="w-12 h-12 mb-4 opacity-20 text-orange-450 animate-pulse" />
+          <h3 className="text-white font-extrabold text-sm mb-1 uppercase tracking-wider">No Bookmarked Listings</h3>
+          <p className="text-xs text-muted-foreground max-w-xs mb-6 font-semibold leading-relaxed">
+            Locate internship positions matching your portfolio on our browse feed and bookmark them here.
           </p>
           <Link
             href="/internships"
-            className="inline-flex items-center gap-1.5 bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all"
+            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all focus:outline-none"
           >
-            Explore Internships
+            Explore Listings
           </Link>
         </div>
       ) : filteredAndSorted.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground bg-[#18181b]/40 border border-white/5 rounded-2xl glass">
-          <p className="text-xs mb-2">No bookmarks match your search or filter preferences.</p>
+        <div className="text-center py-16 text-muted-foreground bg-[#0a080f]/40 border border-white/5 rounded-2xl glass font-semibold text-xs leading-relaxed">
+          <p className="mb-2">No bookmarked opportunities match your current filters.</p>
           <button
             onClick={() => {
               setSearchQuery("");
               setSelectedCategory("All");
             }}
-            className="text-xs font-semibold text-orange-400 hover:underline"
+            className="text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors uppercase tracking-wider"
           >
-            Clear Filters
+            Reset Filters
           </button>
         </div>
       ) : (
@@ -240,10 +240,10 @@ export default function SavedPage() {
               <motion.div
                 key={internship._id || internship.external_id}
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, delay: 0.03 * i }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.25, delay: 0.02 * i }}
               >
                 <InternshipCard internship={internship} />
               </motion.div>

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
   RefreshCw, CheckCircle2, AlertCircle, Loader2,
-  Zap, ChevronDown, ChevronUp, Clock, Server, Play, Check, Database
+  Zap, ChevronDown, ChevronUp, Clock, Server, Play, Check, Database, Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow, parseISO } from "date-fns";
@@ -66,11 +66,11 @@ function ConnectorCard({ name, result, isCurrent }: {
   isCurrent: boolean;
 }) {
   const getBadgeStyle = () => {
-    if (isCurrent) return "bg-orange-500/10 border-orange-500/30 text-orange-300";
+    if (isCurrent) return "bg-orange-500/10 border-orange-500/30 text-orange-400";
     if (result?.circuit_breaker_state === "open") return "bg-red-500/10 border-red-500/20 text-red-400";
     if (result?.status === "done") return "bg-emerald-500/10 border-emerald-500/20 text-emerald-400";
     if (result?.status === "error") return "bg-red-500/10 border-red-500/20 text-red-400";
-    return "bg-white/5 border-white/5 text-muted-foreground";
+    return "bg-white/5 border-white/5 text-muted-foreground/60";
   };
 
   const getBadgeText = () => {
@@ -85,77 +85,74 @@ function ConnectorCard({ name, result, isCurrent }: {
     <motion.div
       layout
       className={cn(
-        "relative rounded-xl border p-4 bg-[#18181b]/40 glass transition-all duration-300 flex flex-col justify-between min-h-[145px] overflow-hidden",
-        isCurrent ? "border-orange-500/40 ring-1 ring-orange-500/10 shadow-lg shadow-orange-500/5" : "border-white/5 hover:border-white/10"
+        "relative rounded-2xl border p-4 bg-[#0a080f] glass transition-all duration-300 flex flex-col justify-between min-h-[145px] overflow-hidden",
+        isCurrent ? "border-orange-500/30 ring-1 ring-orange-500/10 shadow-lg shadow-orange-500/5" : "border-white/5 hover:border-white/10"
       )}
     >
       {/* Pulse effect for active scans */}
       {isCurrent && (
-        <div className="absolute top-0 right-0 w-2 h-2 mt-3 mr-3 rounded-full bg-orange-500 animate-ping" />
+        <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
       )}
 
       {/* Top Row: Logo & Status Badge */}
       <div className="flex items-center justify-between w-full">
-        <div className="w-7 h-7 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-[10px] font-extrabold text-orange-400 shrink-0">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-500/10 to-amber-500/5 border border-orange-500/20 flex items-center justify-center text-[10px] font-black text-orange-400 shrink-0">
           {name.substring(0, 2).toUpperCase()}
         </div>
-        <span className={cn("text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0", getBadgeStyle())}>
+        <span className={cn("text-[8px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider shrink-0", getBadgeStyle())}>
           {getBadgeText()}
         </span>
       </div>
 
-      {/* Middle Row: Title and Subtitle */}
+      {/* Title */}
       <div className="mt-3 flex-1 flex flex-col justify-center">
         <span className="text-xs font-bold text-white block truncate w-full" title={name}>
           {name}
         </span>
-        <span className="text-[9px] text-muted-foreground font-semibold block mt-0.5 uppercase tracking-wider">
-          Connector
+        <span className="text-[9px] text-muted-foreground/50 font-bold block mt-0.5 uppercase tracking-wider">
+          ATS Connector
         </span>
       </div>
 
-      {/* Bottom Row: Metrics & Finish Status */}
+      {/* Bottom Metrics */}
       <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between w-full">
         {result && result.status === "done" ? (
-          <div className="space-y-0.5">
-            <span className="text-[9px] font-semibold text-muted-foreground/80 block uppercase tracking-wider">Results</span>
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-white">
+          <div className="space-y-0.5 min-w-0">
+            <div className="flex items-center gap-1 text-[10px] font-bold text-gray-200">
               <span>{result.fetched} Scanned</span>
               {result.inserted > 0 && (
-                <span className="text-emerald-400 font-semibold">+{result.inserted}</span>
+                <span className="text-emerald-400 font-extrabold">+{result.inserted}</span>
               )}
             </div>
             {result.speed !== undefined && result.speed !== null && result.speed > 0 && (
-              <span className="text-[9px] text-amber-400/80 block mt-0.5 font-medium">
-                Speed: {result.speed} j/s
+              <span className="text-[9px] text-amber-400/80 block mt-0.5 font-bold">
+                Throughput: {result.speed} roles/s
               </span>
             )}
             {result.runtime_seconds !== undefined && result.runtime_seconds !== null && (
-              <span className="text-[9px] text-muted-foreground block">
-                Time: {result.runtime_seconds}s
+              <span className="text-[9px] text-muted-foreground/50 block">
+                Duration: {result.runtime_seconds}s
               </span>
             )}
           </div>
         ) : isCurrent ? (
           <div className="space-y-0.5">
-            <span className="text-[9px] font-semibold text-orange-400/80 block uppercase tracking-wider animate-pulse">Running</span>
+            <span className="text-[9px] font-bold text-orange-400/80 block uppercase tracking-wider animate-pulse">Running</span>
             <span className="text-[10px] font-bold text-white flex items-center gap-1">
-              <Loader2 className="w-2.5 h-2.5 animate-spin text-orange-400 shrink-0" /> API Query
+              <Loader2 className="w-2.5 h-2.5 animate-spin text-orange-400 shrink-0" /> API Scan
             </span>
           </div>
         ) : result?.circuit_breaker_state === "open" ? (
           <div className="space-y-0.5">
-            <span className="text-[9px] font-semibold text-red-400/80 block uppercase tracking-wider">Circuit Breaker</span>
-            <span className="text-[10px] font-bold text-red-400/90 flex items-center gap-1">
-              Tripped
-            </span>
+            <span className="text-[9px] font-bold text-red-400 block uppercase tracking-wider">Breaker Open</span>
+            <span className="text-[10px] font-bold text-red-400/80">Tripped</span>
           </div>
         ) : (
-          <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider">No Activity</span>
+          <span className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wider">No Curation</span>
         )}
 
         {result?.status === "done" && result.circuit_breaker_state !== "open" && (
-          <div className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+          <div className="w-4.5 h-4.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shrink-0">
             <Check className="w-2.5 h-2.5" />
           </div>
         )}
@@ -262,12 +259,12 @@ export function ScraperPanel() {
   const progressPercent = totalCount > 0 ? (finishedCount / totalCount) * 100 : 0;
 
   return (
-    <div className="bg-[#18181b]/40 border border-white/5 rounded-2xl overflow-hidden glass">
+    <div className="bg-[#0a080f]/40 border border-white/5 rounded-2xl overflow-hidden glass">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4">
         <div className="flex items-center gap-3">
           <div className={cn(
-            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300",
+            "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 border border-white/5",
             isRunning ? "bg-orange-500/20 text-orange-400" : "bg-white/5 text-muted-foreground"
           )}>
             {isRunning ? (
@@ -279,30 +276,30 @@ export function ScraperPanel() {
             )}
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+            <h2 className="text-xs font-bold text-white flex items-center gap-2 uppercase tracking-wider">
               {isRunning
                 ? "Indexing ATS Career Portals"
                 : justFinished
                   ? `Scan Completed — ${totalNew} New Internships Indexed`
-                  : "ATS Curation Scraper Control"}
+                  : "ATS Curation Scraper Engine"}
               {isRunning && (
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
               )}
             </h2>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 font-medium flex-wrap">
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5 font-bold uppercase tracking-wider flex-wrap">
               {lastRun && !isRunning && (
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-orange-400/70" /> Last scan run {lastRun}
                 </span>
               )}
               {isRunning && status?.current_connector && (
-                <span className="text-orange-300/80 animate-pulse font-semibold">
-                  Scan: {status.current_connector}
+                <span className="text-orange-400 animate-pulse font-extrabold">
+                  Target: {status.current_connector}
                 </span>
               )}
               {isRunning && status?.eta_seconds !== undefined && status?.eta_seconds !== null && (
-                <span className="text-amber-300 font-semibold flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-300" /> ETA: ~{status.eta_seconds}s
+                <span className="text-amber-400 font-extrabold flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" /> ETA: ~{status.eta_seconds}s
                 </span>
               )}
             </div>
@@ -313,9 +310,9 @@ export function ScraperPanel() {
           {(isRunning || status?.progress?.length) ? (
             <button
               onClick={() => setExpanded((p) => !p)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/5 transition-all text-xs font-semibold text-muted-foreground hover:text-white"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl border border-white/5 hover:border-white/10 hover:bg-white/5 transition-all text-xs font-bold text-muted-foreground hover:text-white"
             >
-              Connectors
+              Pipeline Status
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           ) : null}
@@ -334,20 +331,24 @@ export function ScraperPanel() {
             ) : (
               <Play className="w-3.5 h-3.5 fill-current" />
             )}
-            {isRunning ? "Indexing..." : "Scan & Curation"}
+            {isRunning ? "Running scan..." : "Start Scraper"}
           </button>
         </div>
       </div>
 
-      {/* Progress timeline bar */}
+      {/* Progress timeline bar & Packet movement layer */}
       {isRunning && (
-        <div className="w-full h-1 bg-white/5 relative">
+        <div className="w-full h-1 bg-white/5 relative overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500"
           />
+          {/* Packet Flow Animation */}
+          <div className="absolute inset-0 pointer-events-none" style={{ background: "transparent" }}>
+            <div className="absolute top-0 bottom-0 w-8 bg-gradient-to-r from-transparent via-white/40 to-transparent" style={{ animation: "packet-move-right 1.8s infinite linear" }} />
+          </div>
         </div>
       )}
 
@@ -384,27 +385,27 @@ export function ScraperPanel() {
 
               {/* Run Metrics Summary footer */}
               {!isRunning && status?.progress?.length && (
-                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground gap-4 font-medium">
+                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-muted-foreground gap-4 font-bold uppercase tracking-wider">
                   <div className="flex flex-wrap items-center gap-4">
                     <span className="flex items-center gap-1.5">
                       <Database className="w-4 h-4 text-orange-400/80" />
-                      Processed {status.last_fetched} opportunities during last session
+                      Processed {status.last_fetched} openings
                     </span>
                     {status.total_speed !== undefined && status.total_speed !== null && status.total_speed > 0 && (
                       <span className="flex items-center gap-1.5">
                         <Zap className="w-4 h-4 text-amber-400" />
-                        Throughput: {status.total_speed} jobs/sec
+                        Scan Rate: {status.total_speed} j/s
                       </span>
                     )}
                     {status.success_rate !== undefined && status.success_rate !== null && (
                       <span className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        Success Rate: {Math.round(status.success_rate * 100)}%
+                        <Activity className="w-4 h-4 text-emerald-400" />
+                        Reliability: {Math.round(status.success_rate * 100)}%
                       </span>
                     )}
                   </div>
-                  <span className={cn("px-2.5 py-0.5 rounded-full", totalNew > 0 ? "bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20" : "")}>
-                    {totalNew > 0 ? `+${totalNew} new openings indexed successfully` : "All monitored opportunities already up-to-date"}
+                  <span className={cn("px-3 py-1 rounded-xl text-[9px]", totalNew > 0 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-black" : "bg-white/5 border border-white/5 font-semibold")}>
+                    {totalNew > 0 ? `+${totalNew} new openings sync success` : "All career portal listings current"}
                   </span>
                 </div>
               )}
@@ -420,7 +421,7 @@ export function ScraperPanel() {
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-2 mx-6 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs"
+            className="flex items-center gap-2 mx-6 mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold"
           >
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
