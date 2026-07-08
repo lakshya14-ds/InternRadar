@@ -100,6 +100,13 @@ export default function InternshipsPage() {
 
   const filteredInternships = useMemo(() => {
     if (quickFilter === "all") return internships;
+    if (quickFilter === "added_today") {
+      const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+      return internships.filter(item => {
+        const time = item.scraped_at ? new Date(item.scraped_at).getTime() : 0;
+        return time >= twentyFourHoursAgo;
+      });
+    }
     if (quickFilter === "ats") {
       return internships.filter(item => ["greenhouse", "lever", "ashby", "workday", "smartrecruiters", "icims", "taleo", "successfactors", "jobvite", "bamboohr"].includes(item.source.toLowerCase()));
     }
@@ -291,6 +298,7 @@ export default function InternshipsPage() {
       <div className="flex gap-2 pb-2 overflow-x-auto custom-scrollbar flex-wrap">
         {[
           { id: "all", label: "All Opportunities" },
+          { id: "added_today", label: "Added Today" },
           { id: "ats", label: "Top ATS Openings" },
           { id: "startups", label: "Startup Roles" },
           { id: "iit_nit", label: "IITs / NITs Portal" },
