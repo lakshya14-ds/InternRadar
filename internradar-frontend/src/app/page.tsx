@@ -12,6 +12,7 @@ import {
 import { internshipsApi, statsApi } from "@/lib/api";
 import { InternshipCard } from "@/components/internships/InternshipCard";
 import { cn, getInternshipId } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Software Engineering": "text-blue-400 bg-blue-500/10 border-blue-500/20",
@@ -61,6 +62,7 @@ function StatCounter({ valueStr }: { valueStr: string }) {
 
 export default function LandingPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
   // Mouse Parallax for hero card backing
@@ -228,11 +230,11 @@ export default function LandingPage() {
               Create Student Account
             </button>
             <button
-              onClick={() => handleNav("/internships")}
+              onClick={() => handleNav(session ? "/internships" : "/login?callbackUrl=/internships")}
               disabled={navigatingTo !== null}
               className="inline-flex items-center gap-2 border border-white/5 hover:border-white/10 text-white/95 hover:text-white px-6 py-3.5 rounded-xl font-bold transition-all bg-[#120f18]/30 glass disabled:opacity-50 text-xs hover:bg-[#120f18]/60"
             >
-              {navigatingTo === "/internships" && <Loader2 className="w-4 h-4 animate-spin" />}
+              {(navigatingTo === "/internships" || navigatingTo === "/login?callbackUrl=/internships") && <Loader2 className="w-4 h-4 animate-spin" />}
               Browse Opportunities
             </button>
           </div>

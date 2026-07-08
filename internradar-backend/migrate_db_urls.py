@@ -70,8 +70,8 @@ async def migrate_internships():
     unstop_updates = 0
     for job in unstop_jobs:
         old_url = job.get("url", "")
-        if "unstop-1" in old_url or "unstop.com/o/" in old_url:
-            new_url = "https://unstop.com/internships"
+        if "unstop-1" in old_url or "unstop-1" in str(job.get("external_id", "")):
+            new_url = "https://unstop.com/company/cred-124625"
             await collection.update_one({"_id": job["_id"]}, {"$set": {"url": new_url}})
             unstop_updates += 1
     print(f"Updated {unstop_updates} Unstop URLs.")

@@ -29,15 +29,6 @@ class StudentPlatformsConnector(BaseConnector):
         logger.info("Student platforms fetching job listings...")
         return [
             {
-                "id": "unstop-1",
-                "platform": "unstop",
-                "company_name": "CRED",
-                "title": "Backend Engineering Intern",
-                "location": "Bangalore, India",
-                "url": "https://unstop.com/internships",
-                "description": "CRED backend intern role listed on Unstop.",
-            },
-            {
                 "id": "devfolio-1",
                 "platform": "devfolio",
                 "company_name": "Push Protocol",
