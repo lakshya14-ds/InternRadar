@@ -1,6 +1,7 @@
 """FastAPI application entry point."""
 
 import sys
+import os
 import asyncio
 
 if sys.platform == "win32":
@@ -14,6 +15,7 @@ import logging
 from contextlib import asynccontextmanager
 from app.routers import auth, users
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routers import stats
 from app.config import get_settings
 from app.database import mongo
@@ -58,6 +60,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="InternRadar India API", version="0.2.0", lifespan=lifespan)
+
+# Define allowed origins for production Vercel frontend and local development
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "https://intern-radar-tau.vercel.app",
+]
+
+# Allow overriding origins via environment variable
+extra_origins = os.environ.get("ALLOWED_ORIGINS")
+if extra_origins:
+    allowed_origins.extend([origin.strip() for origin in extra_origins.split(",") if origin.strip()])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(health_router)
 app.include_router(companies_router)
 app.include_router(internships_router)

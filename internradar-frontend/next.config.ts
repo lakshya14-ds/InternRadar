@@ -10,15 +10,19 @@ const devOrigins = [
   "internradar-dev.loca.lt",
 ];
 
-const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || "http://localhost:8000";
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
   async rewrites() {
+    if (!backendUrl && process.env.NODE_ENV === "production") {
+      return [];
+    }
+    const dest = backendUrl || "http://localhost:8000";
     return [
       {
         source: "/backend/:path*",
-        destination: `${backendUrl}/:path*`,
+        destination: `${dest}/:path*`,
       },
     ];
   },

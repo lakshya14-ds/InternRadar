@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { Internship, SearchParams, Stats, User, UserPreferences } from "@/types";
 
-const BACKEND = "/backend";
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || "/backend";
 
 const api = axios.create({ baseURL: BACKEND });
 
