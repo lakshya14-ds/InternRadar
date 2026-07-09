@@ -31,3 +31,15 @@ Thumbs.db
 
 # Typescript
 *.tsbuildinfo
+
+# Coverage
+coverage/
+coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover

@@ -10,7 +10,7 @@ const devOrigins = [
   "internradar-dev.loca.lt",
 ];
 
-const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
+const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || "http://localhost:8000";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,

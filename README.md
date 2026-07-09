@@ -459,6 +459,63 @@ Career Sites
 - WhatsApp notifications
 - Browser extension
 
+# 🚀 Production Deployment Guide
+
+This project is a monorepo containing a Next.js frontend and a FastAPI backend. This section details how to deploy the backend on Railway and the frontend on Vercel.
+
+---
+
+## 🛠️ Railway Backend Deployment
+
+The backend application is configured to build using **Nixpacks** and start using `uvicorn`.
+
+### 1. Project Configuration
+* **Root Directory**: Set the Service Root Directory to `internradar-backend` in the Railway dashboard settings. This ensures Railway compiles and runs the backend directory instead of the monorepo root.
+* **Build Configuration**: Configured automatically via `railway.json` and `Procfile`.
+* **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+* **Restart Policy**: Enabled to automatically restart on failure (`ON_FAILURE`).
+
+### 2. Environment Variables
+Add the following variables in the Railway Service dashboard:
+
+| Variable | Description | Example / Recommended Value |
+| :--- | :--- | :--- |
+| `MONGO_URI` | MongoDB Connection String | `mongodb+srv://...` |
+| `DB_NAME` | Database Name | `internradar` |
+| `JWT_SECRET` | Secret key for JWT hashing | Any secure string |
+| `SCRAPER_INTERVAL_MINUTES` | Frequency of recruiter scans | `30` |
+| `PORT` | Listening port (injected by Railway) | `$PORT` (Do not set manually) |
+
+### 3. Common Errors
+* **`503 Service Unavailable`**: Usually indicates that the backend is unable to connect to MongoDB. Check that your `MONGO_URI` is correct and that MongoDB Atlas allows connections from all IPs (`0.0.0.0/0`) since Railway uses dynamic outbound IPs.
+* **`ModuleNotFoundError`**: Ensure `requirements.txt` contains all core libraries (`fastapi`, `uvicorn`, `motor`, etc.).
+
+---
+
+## 📐 Vercel Frontend Deployment
+
+The frontend application is a modern Next.js 15 site deployed on Vercel.
+
+### 1. Project Configuration
+* **Framework Preset**: Set explicitly to **`Next.js`** in Vercel settings.
+* **Root Directory**: Set to `internradar-frontend`.
+* **Build Command**: `next build`
+* **Output Directory**: `.next`
+
+### 2. Environment Variables
+Add the following variables in the Vercel Dashboard:
+
+| Variable | Description | Example / Recommended Value |
+| :--- | :--- | :--- |
+| `NEXT_PUBLIC_API_URL` | Live URL of the Railway backend | `https://internradar-backend.up.railway.app` |
+| `NEXTAUTH_URL` | Live URL of your Vercel deployment | `https://intern-radar-tau.vercel.app` |
+| `NEXTAUTH_SECRET` | Secret key for session cryptography | Any secure string |
+| `GOOGLE_CLIENT_ID` | OAuth Google Client ID | `<id>.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET` | OAuth Google Client Secret | `<secret>` |
+
+### 3. Custom Domains
+* To configure your custom domain, navigate to **Settings > Domains** in your Vercel dashboard and add your domain. Ensure your DNS provider points `A` or `CNAME` records to Vercel's servers.
+
 ---
 
 # Contributing

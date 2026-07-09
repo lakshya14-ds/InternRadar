@@ -21,21 +21,35 @@ from app.routers.companies import router as companies_router
 from app.routers.health import router as health_router
 from app.routers.internships import router as internships_router
 from app.routers.scraper import router as scraper_router
-from app.scheduler.scheduler import InternshipScheduler
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
 
+logger = logging.getLogger("app.main")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    import os
     settings = get_settings()
+    logger.info("Environment loaded")
+
     await mongo.connect(settings)
+    logger.info("Mongo connected")
+
+    from app.scheduler.scheduler import InternshipScheduler
     scheduler = InternshipScheduler(settings, mongo.get_collection("internships"))
     scheduler.start()
+    logger.info("Scheduler started")
+
     app.state.scheduler = scheduler
+
+    port = os.environ.get("PORT", "8000")
+    logger.info("Server started")
+    logger.info("Listening on PORT: %s", port)
+
     try:
         yield
     finally:
