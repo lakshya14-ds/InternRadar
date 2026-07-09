@@ -10,7 +10,7 @@ const devOrigins = [
   "internradar-dev.loca.lt",
 ];
 
-function getBackendUrl(): string | null {
+function getBackendUrl(): string {
   const urls = [
     process.env.NEXT_PUBLIC_API_URL,
     process.env.BACKEND_URL
@@ -30,25 +30,16 @@ function getBackendUrl(): string | null {
       }
     }
   }
-  return null;
+  if (process.env.NODE_ENV === "production") {
+    return "https://internradar-production.up.railway.app";
+  }
+  return "http://localhost:8000";
 }
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
   async rewrites() {
-    const backendUrl = getBackendUrl();
-    if (process.env.NODE_ENV === "production") {
-      if (!backendUrl) {
-        return [];
-      }
-      return [
-        {
-          source: "/backend/:path*",
-          destination: `${backendUrl}/:path*`,
-        },
-      ];
-    }
-    const dest = backendUrl || "http://localhost:8000";
+    const dest = getBackendUrl();
     return [
       {
         source: "/backend/:path*",
