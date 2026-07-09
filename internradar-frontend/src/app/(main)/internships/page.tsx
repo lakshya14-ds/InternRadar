@@ -95,7 +95,9 @@ export default function InternshipsPage() {
       lastPage.results.length >= PAGE_SIZE ? allPages.length + 1 : undefined,
   });
 
-  const internships = data?.pages.flatMap(p => p.results) ?? [];
+  const internships = useMemo(() => {
+    return data?.pages.flatMap(p => p.results) ?? [];
+  }, [data?.pages]);
   const totalOpportunities = data?.pages[0]?.total ?? 0;
 
   const filteredInternships = useMemo(() => {
