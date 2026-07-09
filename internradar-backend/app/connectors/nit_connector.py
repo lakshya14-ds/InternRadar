@@ -29,7 +29,7 @@ class NITConnector(BaseConnector):
                 "college": "NIT Trichy",
                 "title": "Industrial Training Internship 2026",
                 "location": "Tiruchirappalli, India",
-                "url": "https://www.nitt.edu/home/academics/internship/nitt-intern-1",
+                "url": "https://www.nitt.edu/home/academics/internship/",
                 "description": "NIT Trichy industrial training internship opportunity.",
             }
         ]
