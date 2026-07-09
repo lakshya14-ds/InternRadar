@@ -5,7 +5,12 @@ const devOrigins = [
   "*.replit.dev",
   "*.repl.co",
   "localhost:5000",
+  "*.loca.lt",
+  "tasty-papers-greet.loca.lt",
+  "internradar-dev.loca.lt",
 ];
+
+const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
@@ -13,7 +18,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/backend/:path*",
-        destination: "http://localhost:8000/:path*",
+        destination: `${backendUrl}/:path*`,
       },
     ];
   },
