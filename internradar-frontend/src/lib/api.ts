@@ -1,9 +1,24 @@
 import axios from "axios";
 import type { Internship, SearchParams, Stats, User, UserPreferences } from "@/types";
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || "/backend";
+const getBaseURL = () => {
+  if (process.env.NODE_ENV === "production") {
+    const url = process.env.NEXT_PUBLIC_API_URL;
+    if (
+      url &&
+      url !== "undefined" &&
+      url !== "null" &&
+      url !== "backend_url" &&
+      url.trim() !== "" &&
+      (url.startsWith("http://") || url.startsWith("https://"))
+    ) {
+      return url.trim();
+    }
+  }
+  return "/backend";
+};
 
-const api = axios.create({ baseURL: BACKEND });
+const api = axios.create({ baseURL: getBaseURL() });
 
 export function setAuthToken(token: string | null) {
   if (token) {
